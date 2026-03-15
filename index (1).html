@@ -484,14 +484,17 @@ function showSyncStatus(msg, type) {
   el.style.color = type === 'ok' ? 'var(--green)' : type === 'error' ? 'var(--accent2)' : 'var(--text2)';
 }
 
+// vat: true = 부가세 10% 자동계산
 const FIELDS = [
-  { key: 'electricity', label: '전기세' },
-  { key: 'water', label: '수도료' },
-  { key: 'waste', label: '오물처리세' },
-  { key: 'vat', label: '부가세' },
-  { key: 'tax', label: '기타 세금' },
-  { key: 'extra', label: '기타 부과금' },
+  { key: 'electricity', label: '공용전기세',       vat: true },
+  { key: 'water',       label: '수도요금',         vat: false },
+  { key: 'waste',       label: '오물처리비',       vat: false },
+  { key: 'elevator',    label: '엘리베이터 운용비', vat: true },
+  { key: 'tax',         label: '기타 세금',        vat: false },
+  { key: 'extra',       label: '기타 부과금',      vat: false },
 ];
+function vatOf(n) { return Math.round((Number(n)||0) * 0.1); }
+function withVat(n) { return (Number(n)||0) + vatOf(n); }
 
 function monthKey() { return `${currentYear}-${String(currentMonth).padStart(2,'0')}`; }
 function fmt(n) { return '₩' + (Number(n)||0).toLocaleString(); }
@@ -565,9 +568,10 @@ function renderHome() {
   let html = '';
   tenants.forEach(t => {
     const b = (bills[mk]||{})[t.id] || {};
-    const base = (Number(t.rent)||0) + (Number(t.mgmt)||0);
-    const extras = FIELDS.reduce((s,f) => s+(Number(b[f.key])||0), 0);
-    const sum = base + extras;
+    const rent = withVat(t.rent);
+    const mgmt = withVat(t.mgmt);
+    const extras = FIELDS.reduce((s,f) => s + (f.vat ? withVat(b[f.key]) : (Number(b[f.key])||0)), 0);
+    const sum = rent + mgmt + extras;
     total += sum;
     const hasData = Object.keys(b).length > 0;
     html += `<div class="tenant-item" onclick="switchTab('bill');setTimeout(()=>selectBillTenant('${t.id}'),50)">
@@ -669,15 +673,21 @@ function renderBillForm() {
   const mk = monthKey();
   const b = ((bills[mk]||{})[t.id]) || {};
 
-  let fieldsHtml = '<div class="field-row">';
-  FIELDS.forEach((f, i) => {
-    fieldsHtml += `<div class="field">
-      <label>${f.label}</label>
-      <input type="number" id="bill-${f.key}" placeholder="0" value="${b[f.key]||''}" oninput="updateBillTotal()">
-    </div>`;
-    if (i % 2 === 1 && i < FIELDS.length-1) fieldsHtml += '</div><div class="field-row">';
+  // 월세/관리비 + 부가세
+  const rentVal = Number(b.rent ?? t.rent) || 0;
+  const mgmtVal = Number(b.mgmt ?? t.mgmt) || 0;
+
+  let fieldsHtml = '';
+  FIELDS.forEach(f => {
+    const val = Number(b[f.key]) || 0;
+    const vatVal = f.vat ? vatOf(val) : 0;
+    fieldsHtml += `
+      <div class="field">
+        <label>${f.label}</label>
+        <input type="number" id="bill-${f.key}" placeholder="0" value="${val||''}" oninput="updateBillTotal()">
+        ${f.vat ? `<div style="font-size:11px;color:var(--accent);margin-top:4px;">부가세: <span id="vat-${f.key}">${fmt(vatVal)}</span></div>` : ''}
+      </div>`;
   });
-  fieldsHtml += '</div>';
 
   document.getElementById('bill-form-wrap').innerHTML = `
     <div class="card">
@@ -690,16 +700,18 @@ function renderBillForm() {
       <div class="field-row">
         <div class="field">
           <label>월세</label>
-          <input type="number" id="bill-rent" value="${t.rent}" oninput="updateBillTotal()">
+          <input type="number" id="bill-rent" value="${rentVal||''}" oninput="updateBillTotal()">
+          <div style="font-size:11px;color:var(--accent);margin-top:4px;">부가세: <span id="vat-rent">${fmt(vatOf(rentVal))}</span></div>
         </div>
         <div class="field">
           <label>관리비</label>
-          <input type="number" id="bill-mgmt" value="${t.mgmt}" oninput="updateBillTotal()">
+          <input type="number" id="bill-mgmt" value="${mgmtVal||''}" oninput="updateBillTotal()">
+          <div style="font-size:11px;color:var(--accent);margin-top:4px;">부가세: <span id="vat-mgmt">${fmt(vatOf(mgmtVal))}</span></div>
         </div>
       </div>
-      ${fieldsHtml}
+      <div class="field-row">${fieldsHtml}</div>
       <div class="bill-total-box">
-        <div class="bill-total-label">이번 달 총 청구액</div>
+        <div class="bill-total-label">이번 달 총 청구액 (부가세 포함)</div>
         <div class="bill-total-amount" id="bill-total-display">${fmt(calcTotal(t, b))}</div>
       </div>
       <button class="btn btn-primary" onclick="saveBill()">💾 저장</button>
@@ -707,19 +719,31 @@ function renderBillForm() {
     </div>`;
 }
 function calcTotal(t, b) {
-  const rent = Number(document.getElementById('bill-rent')?.value || t.rent) || 0;
-  const mgmt = Number(document.getElementById('bill-mgmt')?.value || t.mgmt) || 0;
-  const extras = FIELDS.reduce((s,f) => s + (Number(document.getElementById('bill-'+f.key)?.value || b[f.key])||0), 0);
+  const rent = withVat(Number(document.getElementById('bill-rent')?.value ?? b.rent ?? t.rent));
+  const mgmt = withVat(Number(document.getElementById('bill-mgmt')?.value ?? b.mgmt ?? t.mgmt));
+  const extras = FIELDS.reduce((s,f) => {
+    const v = Number(document.getElementById('bill-'+f.key)?.value ?? b[f.key]) || 0;
+    return s + (f.vat ? withVat(v) : v);
+  }, 0);
   return rent + mgmt + extras;
 }
 function updateBillTotal() {
+  // 부가세 표시 업데이트
+  ['rent','mgmt'].forEach(k => {
+    const v = Number(document.getElementById('bill-'+k)?.value) || 0;
+    const el = document.getElementById('vat-'+k);
+    if (el) el.textContent = fmt(vatOf(v));
+  });
+  FIELDS.forEach(f => {
+    if (!f.vat) return;
+    const v = Number(document.getElementById('bill-'+f.key)?.value) || 0;
+    const el = document.getElementById('vat-'+f.key);
+    if (el) el.textContent = fmt(vatOf(v));
+  });
   const t = tenants.find(x=>x.id===selectedTenantId);
   if (!t) return;
-  const total = FIELDS.reduce((s,f) => s+(Number(document.getElementById('bill-'+f.key)?.value)||0), 0)
-    + (Number(document.getElementById('bill-rent')?.value)||0)
-    + (Number(document.getElementById('bill-mgmt')?.value)||0);
   const el = document.getElementById('bill-total-display');
-  if (el) el.textContent = fmt(total);
+  if (el) el.textContent = fmt(calcTotal(t, {}));
 }
 function saveBill() {
   const mk = monthKey();
@@ -736,19 +760,37 @@ function previewReceipt() {
   if (!t) return;
   const mk = monthKey();
   const b = (bills[mk]||{})[t.id] || {};
-  const rent = Number(document.getElementById('bill-rent')?.value || b.rent || t.rent)||0;
-  const mgmt = Number(document.getElementById('bill-mgmt')?.value || b.mgmt || t.mgmt)||0;
-  const extras = FIELDS.map(f => ({
-    label: f.label,
-    value: Number(document.getElementById('bill-'+f.key)?.value || b[f.key])||0
-  })).filter(x=>x.value>0);
-  const total = rent + mgmt + extras.reduce((s,x)=>s+x.value,0);
 
-  let rows = `
-    <div class="receipt-row"><span class="receipt-row-label">월세</span><span class="receipt-row-value">${fmt(rent)}</span></div>
-    <div class="receipt-row"><span class="receipt-row-label">관리비</span><span class="receipt-row-value">${fmt(mgmt)}</span></div>
-    ${extras.map(x=>`<div class="receipt-row"><span class="receipt-row-label">${x.label}</span><span class="receipt-row-value">${fmt(x.value)}</span></div>`).join('')}
-    <div class="receipt-row total"><span class="receipt-row-label">납부 합계</span><span class="receipt-row-value">${fmt(total)}</span></div>`;
+  const rent  = Number(document.getElementById('bill-rent')?.value  ?? b.rent  ?? t.rent)  || 0;
+  const mgmt  = Number(document.getElementById('bill-mgmt')?.value  ?? b.mgmt  ?? t.mgmt)  || 0;
+
+  let rows = '';
+  let total = 0;
+
+  // 월세
+  rows += `<div class="receipt-row"><span class="receipt-row-label">월세</span><span class="receipt-row-value">${fmt(rent)}</span></div>`;
+  rows += `<div class="receipt-row"><span class="receipt-row-label" style="color:#999;font-size:12px;">└ 부가세 (10%)</span><span class="receipt-row-value" style="font-size:12px;">${fmt(vatOf(rent))}</span></div>`;
+  total += withVat(rent);
+
+  // 관리비
+  rows += `<div class="receipt-row"><span class="receipt-row-label">관리비</span><span class="receipt-row-value">${fmt(mgmt)}</span></div>`;
+  rows += `<div class="receipt-row"><span class="receipt-row-label" style="color:#999;font-size:12px;">└ 부가세 (10%)</span><span class="receipt-row-value" style="font-size:12px;">${fmt(vatOf(mgmt))}</span></div>`;
+  total += withVat(mgmt);
+
+  // 기타 항목
+  FIELDS.forEach(f => {
+    const v = Number(document.getElementById('bill-'+f.key)?.value ?? b[f.key]) || 0;
+    if (!v) return;
+    rows += `<div class="receipt-row"><span class="receipt-row-label">${f.label}</span><span class="receipt-row-value">${fmt(v)}</span></div>`;
+    if (f.vat) {
+      rows += `<div class="receipt-row"><span class="receipt-row-label" style="color:#999;font-size:12px;">└ 부가세 (10%)</span><span class="receipt-row-value" style="font-size:12px;">${fmt(vatOf(v))}</span></div>`;
+      total += withVat(v);
+    } else {
+      total += v;
+    }
+  });
+
+  rows += `<div class="receipt-row total"><span class="receipt-row-label">납부 합계</span><span class="receipt-row-value">${fmt(total)}</span></div>`;
 
   document.getElementById('receipt-content').innerHTML = `
     <div class="receipt" id="printable-receipt">
