@@ -278,6 +278,7 @@
     <div class="tab active" onclick="switchTab('home')">홈</div>
     <div class="tab" onclick="switchTab('tenants')">세입자</div>
     <div class="tab" onclick="switchTab('bill')">고지서</div>
+    <div class="tab" onclick="switchTab('settings')">설정</div>
   </div>
 </div>
 
@@ -331,6 +332,53 @@
       </div>
     </div>
   </div>
+
+  <!-- SETTINGS -->
+  <div id="section-settings" class="section">
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">☁️ 구글 시트 동기화</div>
+          <div class="card-subtitle" id="sync-status">준비됨</div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7;">
+        PC와 핸드폰 데이터를 구글 시트로 동기화해요.<br>
+        입력 후 <strong style="color:var(--text);">저장</strong>하고, 다른 기기에서 <strong style="color:var(--text);">불러오기</strong> 하세요.
+      </p>
+      <button class="btn btn-primary" onclick="syncToSheet()">☁️ 구글 시트에 저장</button>
+      <button class="btn btn-secondary" onclick="syncFromSheet()" style="margin-top:8px;">📥 구글 시트에서 불러오기</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">💡 사용 방법</div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--text2);line-height:2.2;">
+        <div>1️⃣ PC에서 데이터 입력</div>
+        <div>2️⃣ 설정 → <strong style="color:var(--text);">구글 시트에 저장</strong> 클릭</div>
+        <div>3️⃣ 핸드폰에서 앱 열기</div>
+        <div>4️⃣ 설정 → <strong style="color:var(--text);">구글 시트에서 불러오기</strong> 클릭</div>
+        <div>5️⃣ 두 기기 데이터 동기화 완료! ✅</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">📤 파일 백업/복원</div>
+          <div class="card-subtitle">수동 백업용</div>
+        </div>
+      </div>
+      <button class="btn btn-secondary" onclick="exportData()">📤 파일로 내보내기</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()" style="margin-top:8px;">📥 파일 가져오기</button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+    </div>
+
+  </div>
 </div>
 
 <!-- Bottom nav -->
@@ -343,6 +391,9 @@
   </div>
   <div class="nav-item" onclick="switchTab('bill')" id="nav-bill">
     <span class="nav-icon">📄</span>고지서
+  </div>
+  <div class="nav-item" onclick="switchTab('settings')" id="nav-settings">
+    <span class="nav-icon">⚙️</span>설정
   </div>
 </div>
 
@@ -392,6 +443,47 @@ let bills = JSON.parse(localStorage.getItem('bills') || '{}');
 let editingTenantId = null;
 let selectedTenantId = null;
 
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzZ5g7ljLVaqGSrd-BnkYAouhXjAGpiHhlbdoThlZP45nUGP-a7lvWyrxR-Qr9Cafv9/exec';
+
+// ---- Google Sheets Sync ----
+async function syncToSheet() {
+  try {
+    showSyncStatus('업로드 중...', 'loading');
+    const res = await fetch(SHEET_URL, {
+      method: 'POST',
+      body: JSON.stringify({ tenants, bills }),
+    });
+    const json = await res.json();
+    if (json.status === 'ok') showSyncStatus('저장 완료 ✓', 'ok');
+    else showSyncStatus('저장 실패 ❌', 'error');
+  } catch {
+    showSyncStatus('네트워크 오류 ❌', 'error');
+  }
+}
+
+async function syncFromSheet() {
+  try {
+    showSyncStatus('불러오는 중...', 'loading');
+    const res = await fetch(SHEET_URL);
+    const json = await res.json();
+    if (json.status === 'ok' && json.data) {
+      tenants = json.data.tenants || [];
+      bills = json.data.bills || {};
+      save(); renderAll();
+      showSyncStatus('불러오기 완료 ✓', 'ok');
+    } else showSyncStatus('불러오기 실패 ❌', 'error');
+  } catch {
+    showSyncStatus('네트워크 오류 ❌', 'error');
+  }
+}
+
+function showSyncStatus(msg, type) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = type === 'ok' ? 'var(--green)' : type === 'error' ? 'var(--accent2)' : 'var(--text2)';
+}
+
 const FIELDS = [
   { key: 'electricity', label: '전기세' },
   { key: 'water', label: '수도료' },
@@ -420,9 +512,10 @@ function changeMonth(d) {
 
 // ---- Tabs ----
 function switchTab(tab) {
-  ['home','tenants','bill'].forEach(t => {
+  ['home','tenants','bill','settings'].forEach(t => {
     document.getElementById(`section-${t}`).classList.toggle('active', t===tab);
-    document.querySelector(`.tabs .tab:nth-child(${['home','tenants','bill'].indexOf(t)+1})`).classList.toggle('active', t===tab);
+    const idx = ['home','tenants','bill','settings'].indexOf(t)+1;
+    document.querySelector(`.tabs .tab:nth-child(${idx})`).classList.toggle('active', t===tab);
     document.getElementById(`nav-${t}`).classList.toggle('active', t===tab);
   });
   if (tab==='bill') renderBillChips();
@@ -430,6 +523,40 @@ function switchTab(tab) {
 
 // ---- Render All ----
 function renderAll() { renderHome(); renderTenants(); if(selectedTenantId) renderBillForm(); renderBillChips(); }
+
+// ---- Export ----
+function exportData() {
+  const data = { tenants, bills, exportedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = `임대관리_백업_${date}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('내보내기 완료! ✓');
+}
+
+// ---- Import ----
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.tenants || !data.bills) throw new Error();
+      if (!confirm(`가져오기 하면 현재 데이터가 덮어씌워져요!\n계속할까요?`)) return;
+      tenants = data.tenants;
+      bills = data.bills;
+      save(); renderAll();
+      showToast('가져오기 완료! ✓');
+    } catch {
+      showToast('파일이 올바르지 않아요 ❌');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
 
 // ---- Home ----
 function renderHome() {
