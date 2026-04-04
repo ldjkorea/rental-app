@@ -11,125 +11,254 @@
 <meta name="apple-mobile-web-app-title" content="임대관리">
 <link rel="apple-touch-icon" href="icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:#0f0f13;--surface:#1a1a22;--surface2:#22222e;--border:#2e2e3e;
-    --accent:#6c63ff;--accent2:#ff6584;--text:#e8e8f0;--text2:#888899;
-    --text3:#555566;--green:#4ade80;--yellow:#fbbf24;--radius:16px;
+  :root{
+    --bg:#080808;--surface:#111111;--surface2:#181818;--surface3:#1e1e1e;
+    --border:#2a2620;--border2:#3a3228;
+    --gold:#c9a84c;--gold2:#e8c97a;--gold3:#f5e0a0;
+    --goldbg:rgba(201,168,76,0.08);--goldbg2:rgba(201,168,76,0.15);
+    --text:#f0ead8;--text2:#8a7d68;--text3:#4a4035;
+    --green:#4caf7d;--red:#c0392b;--redbg:rgba(192,57,43,0.1);
+    --radius:14px;--radius2:10px;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;}
-  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:20px 20px 0;position:sticky;top:0;z-index:100;}
-  .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
-  .logo{font-size:20px;font-weight:900;letter-spacing:-0.5px;}
-  .logo span{color:var(--accent);}
-  .month-selector{display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:50px;padding:6px 14px;font-size:14px;font-weight:700;color:var(--text);border:1px solid var(--border);}
-  .month-selector button{background:none;border:none;color:var(--accent);cursor:pointer;font-size:18px;line-height:1;padding:0 2px;}
-  .tabs{display:flex;gap:4px;}
-  .tab{flex:1;padding:10px;text-align:center;font-size:12px;font-weight:700;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;transition:all 0.2s;}
-  .tab.active{color:var(--accent);border-bottom-color:var(--accent);}
-  .content{padding:20px;}
+  body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding-bottom:80px;background-image:radial-gradient(ellipse at 20% 0%,rgba(201,168,76,0.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(201,168,76,0.03) 0%,transparent 60%);}
+  .header{background:linear-gradient(180deg,#0d0d0d 0%,#0a0a0a 100%);border-bottom:1px solid var(--border2);padding:18px 20px 0;position:sticky;top:0;z-index:100;box-shadow:0 4px 24px rgba(0,0,0,0.6);}
+  .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .logo{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;letter-spacing:1px;color:var(--gold);text-shadow:0 0 20px rgba(201,168,76,0.3);}
+  .logo span{color:var(--gold2);}
+  .month-selector{display:flex;align-items:center;gap:10px;background:var(--surface2);border-radius:50px;padding:6px 16px;font-size:13px;font-weight:700;color:var(--gold);border:1px solid var(--border2);letter-spacing:0.5px;}
+  .month-selector button{background:none;border:none;color:var(--gold);cursor:pointer;font-size:16px;line-height:1;padding:0 2px;opacity:0.7;transition:opacity 0.2s;}
+  .month-selector button:hover{opacity:1;}
+  .tabs{display:flex;gap:0;}
+  .tab{flex:1;padding:10px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer;transition:all 0.25s;letter-spacing:0.3px;}
+  .tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+  .content{padding:16px;}
   .section{display:none;}
   .section.active{display:block;}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:12px;}
-  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-  .card-title{font-size:15px;font-weight:700;}
-  .card-subtitle{font-size:12px;color:var(--text2);margin-top:2px;}
-  .tenant-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:border-color 0.2s,transform 0.1s;}
-  .tenant-item:active{transform:scale(0.98);}
-  .tenant-item:hover{border-color:var(--accent);}
-  .tenant-avatar{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;flex-shrink:0;}
+  .card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:16px;margin-bottom:10px;position:relative;overflow:hidden;}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.4),transparent);}
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .card-title{font-size:14px;font-weight:700;color:var(--text);letter-spacing:0.3px;}
+  .card-subtitle{font-size:11px;color:var(--text2);margin-top:3px;}
+  .tenant-item{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s;}
+  .tenant-item:active{transform:scale(0.985);}
+  .tenant-item:hover{border-color:var(--gold);background:var(--goldbg);}
+  .tenant-avatar{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#2a2210,#1a1408);border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0;color:var(--gold);box-shadow:0 0 12px rgba(201,168,76,0.15);}
   .tenant-info{flex:1;min-width:0;}
-  .tenant-name{font-size:15px;font-weight:700;}
-  .tenant-unit{font-size:12px;color:var(--text2);margin-top:2px;}
-  .tenant-total{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--accent);text-align:right;}
-  .tenant-total-label{font-size:11px;color:var(--text3);}
-  .btn-add{width:100%;padding:14px;border-radius:var(--radius);border:2px dashed var(--border);background:none;color:var(--text2);font-size:14px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all 0.2s;margin-top:4px;}
-  .btn-add:hover{border-color:var(--accent);color:var(--accent);}
+  .tenant-name{font-size:14px;font-weight:700;color:var(--text);}
+  .tenant-unit{font-size:11px;color:var(--text2);margin-top:3px;}
+  .tenant-total{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--gold);text-align:right;}
+  .tenant-total-label{font-size:10px;color:var(--text3);margin-bottom:2px;}
+  .btn-add{width:100%;padding:12px;border-radius:var(--radius);border:1px dashed var(--border2);background:none;color:var(--text2);font-size:13px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all 0.2s;margin-top:4px;}
+  .btn-add:hover{border-color:var(--gold);color:var(--gold);}
   .bill-tenant-select{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:16px;scrollbar-width:none;}
   .bill-tenant-select::-webkit-scrollbar{display:none;}
-  .tenant-chip{flex-shrink:0;padding:8px 16px;border-radius:50px;border:1.5px solid var(--border);background:var(--surface2);font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;transition:all 0.2s;white-space:nowrap;}
-  .tenant-chip.active{border-color:var(--accent);background:rgba(108,99,255,0.15);color:var(--accent);}
+  .tenant-chip{flex-shrink:0;padding:7px 16px;border-radius:50px;border:1px solid var(--border2);background:var(--surface2);font-size:12px;font-weight:700;color:var(--text2);cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .tenant-chip.active{border-color:var(--gold);background:var(--goldbg2);color:var(--gold);}
   .field{margin-bottom:12px;}
-  .field label{font-size:12px;color:var(--text2);font-weight:700;display:block;margin-bottom:6px;letter-spacing:0.5px;}
-  .field input,.field select,.field textarea{width:100%;padding:12px 14px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:'Noto Sans KR',sans-serif;transition:border-color 0.2s;}
-  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);}
+  .field label{font-size:11px;color:var(--text2);font-weight:700;display:block;margin-bottom:5px;letter-spacing:0.8px;text-transform:uppercase;}
+  .field input,.field select,.field textarea{width:100%;padding:11px 14px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius2);color:var(--text);font-size:14px;font-family:'Noto Sans KR',sans-serif;transition:border-color 0.2s;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold);background:var(--surface3);}
   .field select option{background:var(--surface2);}
   .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .vat-hint{font-size:11px;color:var(--accent);margin-top:4px;}
-  .bill-total-box{background:linear-gradient(135deg,rgba(108,99,255,0.2),rgba(255,101,132,0.1));border:1px solid var(--accent);border-radius:var(--radius);padding:16px;margin:16px 0;text-align:center;}
-  .bill-total-label{font-size:12px;color:var(--text2);margin-bottom:4px;}
-  .bill-total-amount{font-family:'DM Mono',monospace;font-size:28px;font-weight:500;color:var(--accent);}
-  .btn{padding:14px 20px;border-radius:12px;border:none;font-size:14px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;}
-  .btn-primary{background:var(--accent);color:white;width:100%;justify-content:center;}
-  .btn-primary:active{background:#5a52e0;transform:scale(0.98);}
-  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);width:100%;justify-content:center;margin-top:8px;}
-  .btn-green{background:var(--green);color:#000;width:100%;justify-content:center;margin-top:8px;font-weight:900;}
-  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;align-items:flex-end;justify-content:center;}
+  .vat-hint{font-size:11px;color:var(--gold);margin-top:4px;opacity:0.8;}
+  .bill-total-box{background:linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.03));border:1px solid var(--gold);border-radius:var(--radius);padding:18px;margin:16px 0;text-align:center;position:relative;overflow:hidden;}
+  .bill-total-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold2),transparent);}
+  .bill-total-label{font-size:11px;color:var(--text2);margin-bottom:6px;letter-spacing:1px;text-transform:uppercase;}
+  .bill-total-amount{font-family:'DM Mono',monospace;font-size:30px;font-weight:500;color:var(--gold2);letter-spacing:-1px;}
+  .btn{padding:12px 20px;border-radius:var(--radius2);border:none;font-size:13px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px;letter-spacing:0.3px;}
+  .btn-primary{background:linear-gradient(135deg,#c9a84c,#a8862e);color:#0a0a0a;width:100%;justify-content:center;box-shadow:0 4px 16px rgba(201,168,76,0.25);}
+  .btn-primary:active{transform:scale(0.98);box-shadow:none;}
+  .btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border2);width:100%;justify-content:center;margin-top:8px;}
+  .btn-secondary:hover{border-color:var(--gold);color:var(--gold);}
+  .btn-green{background:linear-gradient(135deg,#2d6a4f,#1b4332);color:var(--gold3);border:1px solid rgba(76,175,125,0.3);width:100%;justify-content:center;margin-top:8px;font-weight:900;}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
   .modal-overlay.open{display:flex;}
-  .modal{background:var(--surface);border-radius:24px 24px 0 0;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;animation:slideUp 0.3s ease;}
+  .modal{background:var(--surface);border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1);border-top:1px solid var(--border2);border-left:1px solid var(--border2);border-right:1px solid var(--border2);}
   @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
-  .modal-title{font-size:18px;font-weight:900;margin-bottom:20px;}
-  .modal-close{float:right;background:var(--surface2);border:none;color:var(--text2);width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;font-weight:700;font-size:13px;padding:10px 20px;border-radius:50px;z-index:300;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
+  .modal-title{font-size:16px;font-weight:700;margin-bottom:20px;color:var(--gold);letter-spacing:0.3px;}
+  .modal-close{float:right;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);width:28px;height:28px;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#c9a84c,#a8862e);color:#0a0a0a;font-weight:700;font-size:12px;padding:10px 22px;border-radius:50px;z-index:300;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 20px rgba(201,168,76,0.4);letter-spacing:0.3px;}
   .toast.show{opacity:1;}
-  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding:8px 0 12px;}
-  .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:6px;font-size:10px;font-weight:700;color:var(--text3);transition:color 0.2s;}
-  .nav-item.active{color:var(--accent);}
-  .nav-icon{font-size:22px;}
-  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
-  .summary-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;}
-  .summary-card-label{font-size:11px;color:var(--text2);margin-bottom:6px;}
-  .summary-card-value{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;}
-  .summary-card-value.accent{color:var(--accent);}
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(180deg,#0d0d0d 0%,#090909 100%);border-top:1px solid var(--border2);display:flex;padding:8px 0 12px;box-shadow:0 -4px 24px rgba(0,0,0,0.5);}
+  .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:5px;font-size:9px;font-weight:700;color:var(--text3);transition:color 0.2s;letter-spacing:0.3px;}
+  .nav-item.active{color:var(--gold);}
+  .nav-icon{font-size:19px;}
+  .summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+  .summary-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius);padding:14px;position:relative;overflow:hidden;}
+  .summary-card::after{content:'';position:absolute;bottom:0;right:0;width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,0.06),transparent);}
+  .summary-card-label{font-size:10px;color:var(--text2);margin-bottom:6px;letter-spacing:0.8px;text-transform:uppercase;}
+  .summary-card-value{font-family:'DM Mono',monospace;font-size:17px;font-weight:500;}
+  .summary-card-value.accent{color:var(--gold);}
   .summary-card-value.green{color:var(--green);}
   .empty{text-align:center;padding:48px 20px;color:var(--text3);}
-  .empty-icon{font-size:48px;margin-bottom:12px;}
-  .empty-text{font-size:14px;}
-  .tag{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:50px;margin-left:6px;}
-  .tag-new{background:rgba(108,99,255,0.2);color:var(--accent);}
-  .section-label{font-size:12px;font-weight:700;color:var(--text2);margin:14px 0 8px;letter-spacing:0.5px;}
+  .empty-icon{font-size:40px;margin-bottom:12px;opacity:0.4;}
+  .empty-text{font-size:13px;}
+  .tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:50px;margin-left:6px;}
+  .tag-new{background:var(--goldbg2);color:var(--gold);}
+  .section-label{font-size:11px;font-weight:700;color:var(--gold);margin:14px 0 8px;letter-spacing:1px;text-transform:uppercase;opacity:0.8;}
   .divider{border:none;border-top:1px solid var(--border);margin:16px 0;}
   .water-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-  .water-row input{flex:1;padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;font-family:'DM Mono',monospace;}
-  .water-row input:focus{outline:none;border-color:var(--accent);}
-  .water-hist-item{font-size:12px;color:var(--text2);padding:5px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+  .water-row input{flex:1;padding:10px 12px;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--radius2);color:var(--text);font-size:14px;font-family:'DM Mono',monospace;}
+  .water-row input:focus{outline:none;border-color:var(--gold);}
+  .water-hist-item{font-size:12px;color:var(--text2);padding:6px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
   .kakao-box{background:#FEE500;border-radius:var(--radius);padding:16px;color:#111;font-size:13px;line-height:1.9;white-space:pre-wrap;word-break:break-all;margin-top:12px;font-family:'Noto Sans KR',sans-serif;max-height:50vh;overflow-y:auto;}
+  .ov-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+  .ov-row:last-child{border-bottom:none;}
+  .ov-label{font-size:13px;color:var(--text2);}
+  .ov-value{font-family:'DM Mono',monospace;font-size:13px;color:var(--gold);font-weight:700;}
+  .alert-warn{background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:11px 14px;margin-bottom:8px;font-size:12px;color:var(--gold2);}
+  .alert-danger{background:rgba(192,57,43,0.1);border:1px solid rgba(192,57,43,0.3);border-radius:10px;padding:11px 14px;margin-bottom:8px;font-size:12px;color:#e74c3c;}
+</style>
 </style>
 </head>
+
+<style>
+/* PC 사이드바 레이아웃 */
+@media (min-width: 768px) {
+  body { display: flex; padding-bottom: 0; }
+  .bottom-nav { display: none !important; }
+  .sidebar {
+    width: 220px; min-height: 100vh; flex-shrink: 0;
+    background: linear-gradient(180deg, #0d0d0d 0%, #090909 100%);
+    border-right: 1px solid var(--border2);
+    position: fixed; left: 0; top: 0; bottom: 0;
+    display: flex; flex-direction: column;
+    padding: 0; z-index: 50;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.4);
+  }
+  .sidebar-logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border2);
+  }
+  .sidebar-logo-main { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--gold); letter-spacing: 1px; }
+  .sidebar-logo-sub { font-size: 10px; color: var(--text3); letter-spacing: 3px; margin-top: 2px; }
+  .sidebar-month {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border2);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .sidebar-month span { font-size: 13px; font-weight: 700; color: var(--gold); }
+  .sidebar-month button { background: none; border: none; color: var(--gold); cursor: pointer; font-size: 16px; opacity: 0.7; }
+  .sidebar-month button:hover { opacity: 1; }
+  .sidebar-nav { flex: 1; padding: 12px 0; }
+  .sidebar-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 24px; font-size: 13px; font-weight: 700;
+    color: var(--text3); cursor: pointer; transition: all 0.2s;
+    letter-spacing: 0.3px; border-left: 3px solid transparent;
+  }
+  .sidebar-item:hover { color: var(--text2); background: var(--goldbg); }
+  .sidebar-item.active { color: var(--gold); border-left-color: var(--gold); background: var(--goldbg); }
+  .sidebar-item-icon { font-size: 18px; width: 24px; text-align: center; }
+  .sidebar-stats {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border2);
+  }
+  .sidebar-stat-label { font-size: 10px; color: var(--text3); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 4px; }
+  .sidebar-stat-value { font-family: 'DM Mono', monospace; font-size: 16px; color: var(--gold); font-weight: 500; }
+  .main-wrapper { margin-left: 220px; flex: 1; min-height: 100vh; }
+  .header { display: none; }
+  .pc-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 28px; border-bottom: 1px solid var(--border2);
+    background: var(--surface);
+    position: sticky; top: 0; z-index: 40;
+  }
+  .pc-header-title { font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: 0.3px; }
+  .content { padding: 24px 28px; max-width: 900px; }
+  .summary-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 767px) {
+  .sidebar { display: none; }
+  .main-wrapper { width: 100%; }
+  .pc-header { display: none; }
+}
+</style>
+
 <body>
 
-<div class="header">
-  <div class="header-top">
-    <div class="logo">임대<span>관리</span></div>
-    <div class="month-selector">
-      <button onclick="changeMonth(-1)">‹</button>
-      <span id="currentMonth">2026년 3월</span>
-      <button onclick="changeMonth(1)">›</button>
+<!-- PC 사이드바 -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-main">임대管理</div>
+    <div class="sidebar-logo-sub">PROPERTY MANAGER</div>
+  </div>
+  <div class="sidebar-month">
+    <button onclick="changeMonth(-1)">‹</button>
+    <span id="sidebar-month">2026년 3월</span>
+    <button onclick="changeMonth(1)">›</button>
+  </div>
+  <div class="sidebar-nav">
+    <div class="sidebar-item active" onclick="switchTab('home')" id="snav-home">
+      <span class="sidebar-item-icon">🏠</span> 홈
+    </div>
+    <div class="sidebar-item" onclick="switchTab('overview')" id="snav-overview">
+      <span class="sidebar-item-icon">📊</span> 총괄 배분
+    </div>
+    <div class="sidebar-item" onclick="switchTab('history')" id="snav-history">
+      <span class="sidebar-item-icon">📋</span> 고지서 / 내역
+    </div>
+    <div class="sidebar-item" onclick="switchTab('tenants')" id="snav-tenants">
+      <span class="sidebar-item-icon">👥</span> 세입자 관리
+    </div>
+    <div class="sidebar-item" onclick="switchTab('settings')" id="snav-settings">
+      <span class="sidebar-item-icon">⚙️</span> 설정
     </div>
   </div>
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('home')">🏠홈</div>
-    <div class="tab" onclick="switchTab('tenants')">👥세입자</div>
-    <div class="tab" onclick="switchTab('bill')">📄고지서</div>
-    <div class="tab" onclick="switchTab('history')">📋내역</div>
-    <div class="tab" onclick="switchTab('settings')">⚙️설정</div>
+  <div class="sidebar-stats">
+    <div class="sidebar-stat-label">이번 달 총 수입</div>
+    <div class="sidebar-stat-value" id="sidebar-total">₩0</div>
+    <div class="sidebar-stat-label" style="margin-top:12px;">월 이자 합계</div>
+    <div class="sidebar-stat-value" id="sidebar-interest" style="color:var(--red);">₩0</div>
+    <div class="sidebar-stat-label" style="margin-top:12px;">순 수입</div>
+    <div class="sidebar-stat-value" id="sidebar-net">₩0</div>
   </div>
 </div>
+
+<div class="main-wrapper">
+  <!-- 모바일 헤더 -->
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">임대<span>管理</span></div>
+      <div class="month-selector">
+        <button onclick="changeMonth(-1)">‹</button>
+        <span id="currentMonth">2026년 3월</span>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PC 헤더 -->
+  <div class="pc-header">
+    <div class="pc-header-title" id="pc-header-title">홈</div>
+    <div style="font-size:12px;color:var(--text2);" id="pc-header-sub">임대 관리 시스템</div>
+  </div>
 
 <div class="content">
   <!-- HOME -->
   <div id="section-home" class="section active">
     <div class="summary-grid">
       <div class="summary-card">
-        <div class="summary-card-label">이번 달 총 청구액</div>
+        <div class="summary-card-label">이번 달 청구액</div>
         <div class="summary-card-value accent" id="summary-total">₩0</div>
       </div>
       <div class="summary-card">
         <div class="summary-card-label">세입자 수</div>
         <div class="summary-card-value green" id="summary-count">0명</div>
       </div>
+      <div class="summary-card">
+        <div class="summary-card-label">월 이자 합계</div>
+        <div class="summary-card-value" style="color:var(--red);" id="summary-interest">₩0</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-card-label">순 수입 (추정)</div>
+        <div class="summary-card-value" id="summary-net">₩0</div>
+      </div>
     </div>
+
     <div class="card">
       <div class="card-header">
         <div><div class="card-title">이번 달 현황</div><div class="card-subtitle" id="home-month-label">2026년 3월</div></div>
@@ -139,34 +268,75 @@
         <div class="empty"><div class="empty-icon">📋</div><div class="empty-text">세입자를 추가하고 고지서를 생성해보세요</div></div>
       </div>
     </div>
+
+    <!-- 대출 현황 -->
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">🏦 건물 담보 대출 현황</div></div>
+        <button onclick="openAddLoan()" style="background:var(--goldbg2);border:1px solid var(--gold);color:var(--gold);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">+ 대출 추가</button>
+      </div>
+      <div id="loan-list">
+        <div class="empty" style="padding:20px;"><div class="empty-text">대출 정보를 추가해주세요</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div id="section-overview" class="section">
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">⚡ 공용전기세 배분</div><div class="card-subtitle" id="overview-month-label"></div></div>
+      </div>
+      <div class="field">
+        <label>이번 달 전기세 총액 (원, 부가세 제외)</label>
+        <input type="number" id="ov-elec-total" placeholder="예: 100000" oninput="calcOverviewElec()">
+      </div>
+      <div id="ov-elec-result"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">💧 수도요금 배분</div></div></div>
+      <div class="field-row">
+        <div class="field"><label>총 청구금액 (원)</label><input type="number" id="ov-water-total" placeholder="예: 300000" oninput="calcOverviewWater()"></div>
+        <div class="field"><label>건물 총 사용량 (톤)</label><input type="number" id="ov-water-usage" placeholder="예: 177" oninput="calcOverviewWater()"></div>
+      </div>
+      <div id="ov-water-result"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">🗑️ 오물처리비 배분</div></div></div>
+      <div class="field"><label>총 오물처리비 (원, 부가세 제외)</label><input type="number" id="ov-waste-total" placeholder="예: 80000" oninput="calcOverviewWaste()"></div>
+      <div id="ov-waste-result"></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">📦 기타 공용요금 배분</div><div class="card-subtitle">모든 세입자에게 균등 배분</div></div></div>
+      <div class="field"><label>항목명</label><input type="text" id="ov-misc-label" placeholder="예: 소방점검비"></div>
+      <div class="field"><label>총 금액 (원)</label><input type="number" id="ov-misc-total" placeholder="예: 120000" oninput="calcOverviewMisc()"></div>
+      <div id="ov-misc-result"></div>
+    </div>
+  </div>
+
+  <!-- HISTORY (고지서 + 내역 통합) -->
+  <div id="section-history" class="section">
+    <!-- 세입자 칩 -->
+    <div style="margin-bottom:16px;">
+      <div class="section-label">세입자 선택</div>
+      <div class="bill-tenant-select" id="history-tenant-chips"></div>
+    </div>
+    <!-- 월 네비게이션 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;" id="history-nav" style="display:none;">
+      <button onclick="historyChangeMonth(-1)" style="background:var(--surface2);border:1px solid var(--border2);color:var(--gold);width:36px;height:36px;border-radius:10px;font-size:18px;cursor:pointer;">‹</button>
+      <span id="history-month-label" style="font-size:14px;font-weight:700;color:var(--text);"></span>
+      <button onclick="historyChangeMonth(1)" style="background:var(--surface2);border:1px solid var(--border2);color:var(--gold);width:36px;height:36px;border-radius:10px;font-size:18px;cursor:pointer;">›</button>
+    </div>
+    <!-- 고지서 (최신) 또는 내역 -->
+    <div id="history-content">
+      <div class="empty"><div class="empty-icon">👆</div><div class="empty-text">위에서 세입자를 선택하세요</div></div>
+    </div>
   </div>
 
   <!-- TENANTS -->
   <div id="section-tenants" class="section">
     <div id="tenant-list"></div>
     <button class="btn-add" onclick="openAddTenant()">＋ 세입자 추가</button>
-  </div>
-
-  <!-- BILL -->
-  <div id="section-bill" class="section">
-    <div style="margin-bottom:16px;">
-      <div class="section-label">세입자 선택</div>
-      <div class="bill-tenant-select" id="bill-tenant-chips"></div>
-    </div>
-    <div id="bill-form-wrap">
-      <div class="empty"><div class="empty-icon">👆</div><div class="empty-text">위에서 세입자를 선택하세요</div></div>
-    </div>
-  </div>
-
-  <!-- HISTORY -->
-  <div id="section-history" class="section">
-    <div style="margin-bottom:16px;">
-      <div class="section-label">세입자 선택</div>
-      <div class="bill-tenant-select" id="history-tenant-chips"></div>
-    </div>
-    <div id="history-list">
-      <div class="empty"><div class="empty-icon">👆</div><div class="empty-text">위에서 세입자를 선택하세요</div></div>
-    </div>
   </div>
 
   <!-- SETTINGS -->
@@ -183,18 +353,19 @@
       <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
     </div>
     <div class="card">
-      <div class="card-header"><div><div class="card-title">🗑️ 데이터 초기화</div><div class="card-subtitle">문제 발생 시 사용</div></div></div>
-      <button class="btn btn-secondary" onclick="resetAllData()" style="color:var(--accent2);border-color:var(--accent2);">전체 데이터 초기화</button>
+      <div class="card-header"><div><div class="card-title">🗑️ 데이터 초기화</div></div></div>
+      <button class="btn btn-secondary" onclick="resetAllData()" style="color:var(--red);border-color:var(--red);">전체 데이터 초기화</button>
     </div>
   </div>
-</div>
+</div><!-- /content -->
+</div><!-- /main-wrapper -->
 
-<!-- Bottom nav -->
+<!-- Bottom nav (모바일만) -->
 <div class="bottom-nav">
   <div class="nav-item active" onclick="switchTab('home')" id="nav-home"><span class="nav-icon">🏠</span>홈</div>
+  <div class="nav-item" onclick="switchTab('overview')" id="nav-overview"><span class="nav-icon">📊</span>총괄</div>
+  <div class="nav-item" onclick="switchTab('history')" id="nav-history"><span class="nav-icon">📋</span>고지서</div>
   <div class="nav-item" onclick="switchTab('tenants')" id="nav-tenants"><span class="nav-icon">👥</span>세입자</div>
-  <div class="nav-item" onclick="switchTab('bill')" id="nav-bill"><span class="nav-icon">📄</span>고지서</div>
-  <div class="nav-item" onclick="switchTab('history')" id="nav-history"><span class="nav-icon">📋</span>내역</div>
   <div class="nav-item" onclick="switchTab('settings')" id="nav-settings"><span class="nav-icon">⚙️</span>설정</div>
 </div>
 
@@ -203,36 +374,25 @@
   <div class="modal">
     <button class="modal-close" onclick="closeModal('modal-tenant')">✕</button>
     <div class="modal-title" id="modal-tenant-title">세입자 추가</div>
-
     <div class="section-label">📋 기본 정보</div>
     <div class="field-row">
       <div class="field"><label>이름 (담당자)</label><input type="text" id="input-name" placeholder="홍길동"></div>
       <div class="field"><label>상호명</label><input type="text" id="input-biz" placeholder="타키 노원역점"></div>
     </div>
     <div class="field"><label>호수 / 동</label><input type="text" id="input-unit" placeholder="101호"></div>
-
     <hr class="divider">
     <div class="section-label">📅 계약 정보</div>
-    <div class="field">
-      <label>최초 계약기간</label>
-      <input type="text" id="input-contract-first" placeholder="2016/10/20 ~ 2017/10/19">
-    </div>
-    <div class="field">
-      <label>현재 계약기간</label>
-      <input type="text" id="input-contract" placeholder="2025/10/20 ~ 2026/10/19" oninput="updateRenewPreview()">
-    </div>
+    <div class="field"><label>최초 계약기간</label><input type="text" id="input-contract-first" placeholder="2016/10/20 ~ 2017/10/19"></div>
+    <div class="field"><label>현재 계약기간</label><input type="text" id="input-contract" placeholder="2025/10/20 ~ 2026/10/19" oninput="updateRenewPreview()"></div>
     <div class="field" id="renew-preview-wrap" style="display:none;">
       <label>계약서 갱신 가능 기간 (자동계산)</label>
-      <div id="renew-preview" style="padding:10px 14px;background:rgba(108,99,255,0.1);border-radius:10px;font-size:14px;color:var(--accent);font-family:'DM Mono',monospace;"></div>
+      <div id="renew-preview" style="padding:10px 14px;background:var(--goldbg);border-radius:10px;font-size:14px;color:var(--gold);font-family:'DM Mono',monospace;"></div>
     </div>
     <div class="field-row">
       <div class="field"><label>월납입 기준일</label><input type="text" id="input-payday" placeholder="매월 15일"></div>
-      <div class="field"><label>납부방식</label>
-        <select id="input-paytype"><option value="후불납">후불납</option><option value="선불납">선불납</option></select>
-      </div>
+      <div class="field"><label>납부방식</label><select id="input-paytype"><option value="후불납">후불납</option><option value="선불납">선불납</option></select></div>
     </div>
     <div class="field"><label>재계약 단위</label><input type="text" id="input-renew" placeholder="1년단위 재계약"></div>
-
     <hr class="divider">
     <div class="section-label">💰 월 고정 금액</div>
     <div class="field-row">
@@ -240,34 +400,16 @@
       <div class="field"><label>관리비 (원)</label><input type="number" id="input-mgmt" placeholder="50000"></div>
     </div>
     <div class="field-row">
-      <div class="field">
-        <label>엘리베이터 운용비 (원, 부가세 제외)</label>
-        <input type="number" id="input-elevator" placeholder="50000">
-        <div style="font-size:11px;color:var(--text2);margin-top:4px;">0 입력 시 미부과</div>
-      </div>
+      <div class="field"><label>엘리베이터 운용비 (원, 부가세 제외)</label><input type="number" id="input-elevator" placeholder="50000"><div style="font-size:11px;color:var(--text2);margin-top:4px;">0 입력 시 미부과</div></div>
       <div class="field"></div>
     </div>
-
     <hr class="divider">
     <div class="section-label">⚡ 공용전기세 배분 설정</div>
-    <div class="field">
-      <label>배분 방식</label>
-      <select id="input-elec-type" onchange="toggleElecFixed()">
-        <option value="none">해당없음</option>
-        <option value="fixed">고정금액 (부가세 별도)</option>
-        <option value="remain">나머지 자동계산</option>
-      </select>
-    </div>
-    <div class="field" id="elec-fixed-wrap" style="display:none;">
-      <label>고정 공급가 (원, 부가세 제외)</label>
-      <input type="number" id="input-elec-fixed" placeholder="35000">
-      <div style="font-size:11px;color:var(--accent);margin-top:4px;">세입자 청구액: <span id="elec-fixed-preview">₩0</span> (부가세 포함)</div>
-    </div>
-
+    <div class="field"><label>배분 방식</label><select id="input-elec-type" onchange="toggleElecFixed()"><option value="none">해당없음</option><option value="fixed">고정금액 (부가세 별도)</option><option value="remain">나머지 자동계산</option></select></div>
+    <div class="field" id="elec-fixed-wrap" style="display:none;"><label>고정 공급가 (원, 부가세 제외)</label><input type="number" id="input-elec-fixed" placeholder="35000"><div style="font-size:11px;color:var(--gold);margin-top:4px;">청구액: <span id="elec-fixed-preview">₩0</span> (VAT포함)</div></div>
     <hr class="divider">
     <div class="section-label">📆 납부확인 사용기간 자동설정</div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">시작일만 입력하면 종료일 자동계산 (예: 15 입력 → 15일~다음달14일)</div>
-
+    <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">시작일 입력 → 종료일 자동계산</div>
     <div class="field-row">
       <div class="field"><label>관리비 시작일</label><input type="number" id="input-period-mgmt" placeholder="15" min="1" max="31"></div>
       <div class="field"><label>월세 시작일</label><input type="number" id="input-period-rent" placeholder="15" min="1" max="31"></div>
@@ -280,20 +422,29 @@
       <div class="field"><label>오물처리비 시작일</label><input type="number" id="input-period-waste" placeholder="15" min="1" max="31"></div>
       <div class="field"></div>
     </div>
-
     <div class="section-label" style="margin-top:8px;">💧 수도요금 자동설정</div>
     <div class="field-row">
       <div class="field"><label>수도 계량일</label><input type="number" id="input-period-water-day" placeholder="21" min="1" max="31"></div>
-      <div class="field"><label>부과 시작월</label>
-        <select id="input-period-water-odd">
-          <option value="">선택</option>
-          <option value="odd">홀수달 (1,3,5,7,9,11월)</option>
-          <option value="even">짝수달 (2,4,6,8,10,12월)</option>
-        </select>
-      </div>
+      <div class="field"><label>부과 시작월</label><select id="input-period-water-odd"><option value="">선택</option><option value="odd">홀수달</option><option value="even">짝수달</option></select></div>
     </div>
-
     <button class="btn btn-primary" onclick="saveTenant()" style="margin-top:8px;">저장</button>
+  </div>
+</div>
+
+<!-- Loan Modal -->
+<div class="modal-overlay" id="modal-loan">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-loan')">✕</button>
+    <div class="modal-title" id="modal-loan-title">대출 추가</div>
+    <div class="field"><label>대출명 / 은행</label><input type="text" id="input-loan-name" placeholder="예: 국민은행 건물담보대출"></div>
+    <div class="field"><label>대출 원금 (원)</label><input type="number" id="input-loan-principal" placeholder="예: 500000000"></div>
+    <div class="field"><label>연 이자율 (%)</label><input type="number" id="input-loan-rate" placeholder="예: 4.5" step="0.01" oninput="calcLoanPreview()"></div>
+    <div id="loan-preview" style="padding:12px;background:var(--goldbg);border-radius:10px;margin-bottom:16px;display:none;">
+      <div style="font-size:11px;color:var(--text2);margin-bottom:4px;">월 이자</div>
+      <div style="font-family:'DM Mono',monospace;font-size:20px;color:var(--gold);" id="loan-preview-amount">₩0</div>
+    </div>
+    <div class="field"><label>만기일</label><input type="text" id="input-loan-maturity" placeholder="예: 2028/10/20"></div>
+    <button class="btn btn-primary" onclick="saveLoan()">저장</button>
   </div>
 </div>
 
@@ -314,7 +465,11 @@
 let currentYear = 2026, currentMonth = 3;
 let tenants = JSON.parse(localStorage.getItem('tenants') || '[]');
 let bills   = JSON.parse(localStorage.getItem('bills')   || '{}');
+let loans   = JSON.parse(localStorage.getItem('loans')   || '[]');
 let editingTenantId = null, selectedTenantId = null;
+let editingLoanId = null;
+let historyTenantId = null;
+let historyYear = currentYear, historyMonth = currentMonth;
 
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycbzZ5g7ljLVaqGSrd-BnkYAouhXjAGpiHhlbdoThlZP45nUGP-a7lvWyrxR-Qr9Cafv9/exec';
 
@@ -343,6 +498,7 @@ const fmtN    = n => (Number(n)||0).toLocaleString();
 const save    = () => {
   localStorage.setItem('tenants', JSON.stringify(tenants));
   localStorage.setItem('bills',   JSON.stringify(bills));
+  localStorage.setItem('loans',   JSON.stringify(loans));
 };
 
 // ---- Sync ----
@@ -411,18 +567,33 @@ function changeMonth(d) {
 }
 
 // ---- Tabs ----
-const TABS = ['home','tenants','bill','history','settings'];
+const TABS = ['home','overview','history','tenants','settings'];
+const TAB_TITLES = { home:'홈', overview:'총괄 배분', history:'고지서 / 내역', tenants:'세입자 관리', settings:'설정' };
+
 function switchTab(tab) {
   TABS.forEach(t=>{
-    document.getElementById(`section-${t}`).classList.toggle('active',t===tab);
-    document.querySelector(`.tabs .tab:nth-child(${TABS.indexOf(t)+1})`).classList.toggle('active',t===tab);
-    document.getElementById(`nav-${t}`).classList.toggle('active',t===tab);
+    const s = document.getElementById(`section-${t}`);
+    if(s) s.classList.toggle('active', t===tab);
+    const n = document.getElementById(`nav-${t}`);
+    if(n) n.classList.toggle('active', t===tab);
+    const sn = document.getElementById(`snav-${t}`);
+    if(sn) sn.classList.toggle('active', t===tab);
   });
-  if(tab==='bill') renderBillChips();
-  if(tab==='history') renderHistoryChips();
+  const pt = document.getElementById('pc-header-title');
+  if(pt) pt.textContent = TAB_TITLES[tab]||tab;
+  if(tab==='history') { renderHistoryChips(); }
+  if(tab==='overview') renderOverview();
 }
 
-function renderAll() { renderHome(); renderTenants(); if(selectedTenantId) renderBillForm(); renderBillChips(); }
+function renderAll() { renderHome(); renderTenants(); renderLoanList(); }
+
+// ---- History month nav ----
+function historyChangeMonth(d) {
+  historyMonth += d;
+  if(historyMonth > 12) { historyMonth = 1; historyYear++; }
+  if(historyMonth < 1) { historyMonth = 12; historyYear--; }
+  renderHistoryContent();
+}
 
 // ---- Home ----
 function calcSaved(t,b) {
@@ -430,6 +601,14 @@ function calcSaved(t,b) {
        + withVat(Number(b.mgmt??t.mgmt)||0)
        + FIELDS.reduce((s,f)=>{ const v=Number(b[f.key])||0; return s+(f.vat?withVat(v):v); },0);
 }
+function calcMonthlyInterest() {
+  return loans.reduce((s, l) => {
+    const principal = Number(l.principal) || 0;
+    const rate = Number(l.rate) || 0;
+    return s + Math.round(principal * (rate / 100) / 12);
+  }, 0);
+}
+
 function renderHome() {
   const mk=monthKey(); let total=0,html='';
   const today = new Date();
@@ -441,23 +620,17 @@ function renderHome() {
     if (!renew) return;
     const { start, end } = renew;
     if (today > end) {
-      alertHtml += `<div style="background:rgba(255,101,132,0.15);border:1.5px solid var(--accent2);border-radius:12px;padding:12px 14px;margin-bottom:8px;font-size:13px;">
-        🚨 <strong>${t.biz||t.name}</strong> 재계약 갱신기간 초과! (${renew.str})
-      </div>`;
+      alertHtml += `<div class="alert-danger">🚨 <strong>${t.biz||t.name}</strong> 재계약 갱신기간 초과! (${renew.str})</div>`;
     } else if (today >= start) {
-      alertHtml += `<div style="background:rgba(251,191,36,0.1);border:1.5px solid var(--yellow);border-radius:12px;padding:12px 14px;margin-bottom:8px;font-size:13px;">
-        ⚠️ <strong>${t.biz||t.name}</strong> 재계약 기간입니다! (${renew.str})
-      </div>`;
+      alertHtml += `<div class="alert-warn">⚠️ <strong>${t.biz||t.name}</strong> 재계약 기간입니다! (${renew.str})</div>`;
     }
   });
-  if (alertHtml) {
-    document.getElementById('home-bill-list').insertAdjacentHTML?.('beforebegin', alertHtml);
-  }
+
   tenants.forEach(t=>{
     const b=(bills[mk]||{})[t.id]||{};
     const sum=calcSaved(t,b); total+=sum;
     const hasData=Object.keys(b).length>0;
-    html+=`<div class="tenant-item" onclick="switchTab('bill');setTimeout(()=>selectBillTenant('${t.id}'),50)">
+    html+=`<div class="tenant-item" onclick="goToHistory('${t.id}')">
       <div class="tenant-avatar">${(t.biz||t.name)[0]}</div>
       <div class="tenant-info">
         <div class="tenant-name">${t.biz||t.name}${!hasData?'<span class="tag tag-new">미입력</span>':''}</div>
@@ -466,13 +639,34 @@ function renderHome() {
       <div class="tenant-total"><div class="tenant-total-label">청구액</div><div>${fmt(sum)}</div></div>
     </div>`;
   });
-  // 알림 + 목록 같이 표시
+
   const alertEl = document.getElementById('home-alerts');
   if (alertEl) alertEl.innerHTML = alertHtml;
   document.getElementById('home-bill-list').innerHTML=tenants.length?html:
     `<div class="empty"><div class="empty-icon">📋</div><div class="empty-text">세입자를 추가하고 고지서를 생성해보세요</div></div>`;
+
+  const interest = calcMonthlyInterest();
+  const net = total - interest;
+
   document.getElementById('summary-total').textContent=fmt(total);
   document.getElementById('summary-count').textContent=tenants.length+'명';
+  const si = document.getElementById('summary-interest');
+  if(si) si.textContent = fmt(interest);
+  const sn = document.getElementById('summary-net');
+  if(sn) { sn.textContent = fmt(net); sn.style.color = net >= 0 ? 'var(--green)' : 'var(--red)'; }
+
+  // 사이드바 업데이트
+  const sb1 = document.getElementById('sidebar-total'); if(sb1) sb1.textContent = fmt(total);
+  const sb2 = document.getElementById('sidebar-interest'); if(sb2) sb2.textContent = fmt(interest);
+  const sb3 = document.getElementById('sidebar-net'); if(sb3) { sb3.textContent = fmt(net); sb3.style.color = net>=0?'var(--green)':'var(--red)'; }
+}
+
+function goToHistory(tenantId) {
+  historyTenantId = tenantId;
+  historyYear = currentYear;
+  historyMonth = currentMonth;
+  switchTab('history');
+  setTimeout(() => { renderHistoryChips(); renderHistoryContent(); }, 50);
 }
 
 // ---- Tenants ----
@@ -607,9 +801,262 @@ function deleteTenant(id) {
   tenants=tenants.filter(x=>x.id!==id); save(); renderAll(); showToast('삭제되었습니다');
 }
 
-// ---- History ----
-let historyTenantId = null;
+// ---- Overview ----
+function renderOverview() {
+  const el = document.getElementById('overview-month-label');
+  if (el) el.textContent = `${currentYear}년 ${currentMonth}월`;
+  // 입력값 초기화 없이 결과만 다시 계산
+  calcOverviewElec();
+  calcOverviewWater();
+}
 
+function calcOverviewElec() {
+  const total = Number(document.getElementById('ov-elec-total')?.value) || 0;
+  const el = document.getElementById('ov-elec-result');
+  if (!el) return;
+  if (!total) { el.innerHTML = ''; return; }
+
+  // 고정 세입자 배분 (elecType=fixed)
+  const fixedTenants = tenants.filter(t => t.elecType === 'fixed');
+  const fixedSum = fixedTenants.reduce((s,t) => s + (Number(t.elecFixed)||0), 0);
+  const remainAmt = total - fixedSum;
+
+  let html = `<div style="margin-top:10px;font-size:13px;">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">1톤당 단가 기준 배분 결과</div>`;
+
+  // 고정 세입자
+  fixedTenants.forEach(t => {
+    const amt = Number(t.elecFixed)||0;
+    html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="color:var(--text2);">${t.biz||t.name} (고정)</span>
+      <span style="font-family:'DM Mono',monospace;">공급가 ${fmtN(amt)}원 → 청구 <strong style="color:var(--accent);">${fmtN(withVat(amt))}원</strong></span>
+    </div>`;
+    // 고지서에 즉시 반영
+    applyToMk(t.id, 'electricity', amt);
+  });
+
+  // 나머지 세입자
+  const remainTenants = tenants.filter(t => t.elecType === 'remain');
+  remainTenants.forEach(t => {
+    html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="color:var(--text2);">${t.biz||t.name} (나머지)</span>
+      <span style="font-family:'DM Mono',monospace;">공급가 ${fmtN(remainAmt)}원 → 청구 <strong style="color:var(--green);">${fmtN(withVat(remainAmt))}원</strong></span>
+    </div>`;
+    applyToMk(t.id, 'electricity', remainAmt);
+  });
+
+  // 미부과 세입자
+  tenants.filter(t=>t.elecType==='none').forEach(t => {
+    html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="color:var(--text3);">${t.biz||t.name}</span>
+      <span style="color:var(--text3);">미부과</span>
+    </div>`;
+    applyToMk(t.id, 'electricity', 0);
+  });
+
+  html += `</div>`;
+  el.innerHTML = html;
+  save(); renderHome();
+}
+
+function calcOverviewWater() {
+  const totalAmt = Number(document.getElementById('ov-water-total')?.value) || 0;
+  const totalUsage = Number(document.getElementById('ov-water-usage')?.value) || 0;
+  const el = document.getElementById('ov-water-result');
+  if (!el) return;
+  if (!totalAmt || !totalUsage) { el.innerHTML = ''; return; }
+
+  const perTon = totalAmt / totalUsage;
+
+  // 각 세입자 2개월 사용량 계산
+  const usages = tenants.map(t => {
+    const wh = (t.waterHistory||[]);
+    let usage2m = null;
+    if (wh.length >= 2) {
+      const latest = wh[wh.length-1];
+      const twoAgo = wh.length >= 3 ? wh[wh.length-3] : wh[0];
+      usage2m = latest.val - twoAgo.val;
+    }
+    return { t, usage2m };
+  });
+
+  // 1층 먼저 배분 (사용량 직접)
+  let remainUsage = totalUsage;
+  let remainAmt = totalAmt;
+  let html = `<div style="margin-top:10px;font-size:13px;">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">1톤당 단가: ${fmtN(Math.round(perTon))}원</div>`;
+
+  // 1층~3층: 실제 사용량 기반
+  const directTenants = usages.filter(u => u.t.elecType !== 'none' && u.usage2m !== null);
+  // 4층 (3층 75% 적용)
+  const floor3 = usages.find(u => u.usage2m !== null && u.t.unit && u.t.unit.includes('3'));
+  const floor4 = usages.find(u => u.t.unit && u.t.unit.includes('4'));
+
+  usages.forEach(({t, usage2m}) => {
+    let myUsage = usage2m;
+    let label = '';
+
+    // 4층이고 3층 데이터 있으면 75% 적용
+    if (t.unit && t.unit.includes('4') && floor3 && floor3.usage2m !== null) {
+      myUsage = Math.round(floor3.usage2m * 0.75);
+      label = ' (3층×75%)';
+    }
+
+    if (myUsage === null) {
+      html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+        <span style="color:var(--text3);">${t.biz||t.name}</span>
+        <span style="color:var(--text3);">계량기 이력 없음</span>
+      </div>`;
+      return;
+    }
+
+    const myAmt = Math.round(myUsage * perTon);
+    html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
+      <span style="color:var(--text2);">${t.biz||t.name}${label}</span>
+      <span style="font-family:'DM Mono',monospace;">${fmtN(myUsage)}톤 → <strong style="color:var(--accent);">${fmtN(myAmt)}원</strong></span>
+    </div>`;
+    applyToMk(t.id, 'water', myAmt);
+  });
+
+  html += `</div>`;
+  el.innerHTML = html;
+  save(); renderHome();
+}
+
+function calcOverviewWaste() {
+  const total = Number(document.getElementById('ov-waste-total')?.value) || 0;
+  const el = document.getElementById('ov-waste-result');
+  if (!el) return;
+  if (!total) { el.innerHTML = ''; return; }
+  const count = tenants.length;
+  if (!count) { el.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:6px 0;">세입자가 없어요</div>'; return; }
+  const each = Math.round(total / count);
+  let html = `<div style="margin-top:10px;font-size:13px;">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">${fmtN(total)}원 ÷ ${count}명 = 1인당 ${fmtN(each)}원</div>`;
+  tenants.forEach(t => {
+    html += `<div class="ov-row"><span class="ov-label">${t.biz||t.name}</span><span class="ov-value">${fmtN(each)}원</span></div>`;
+    applyToMk(t.id, 'waste', each);
+  });
+  html += `</div>`;
+  el.innerHTML = html;
+  save(); renderHome();
+}
+
+function calcOverviewMisc() {
+  const total = Number(document.getElementById('ov-misc-total')?.value) || 0;
+  const label = document.getElementById('ov-misc-label')?.value || '기타';
+  const el = document.getElementById('ov-misc-result');
+  if (!el) return;
+  if (!total) { el.innerHTML = ''; return; }
+  const count = tenants.length;
+  if (!count) { el.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:6px 0;">세입자가 없어요</div>'; return; }
+  const each = Math.round(total / count);
+  let html = `<div style="margin-top:10px;font-size:13px;">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">${label}: ${fmtN(total)}원 ÷ ${count}명 = 1인당 ${fmtN(each)}원</div>`;
+  tenants.forEach(t => {
+    const mk = monthKey();
+    if (!bills[mk]) bills[mk] = {};
+    if (!bills[mk][t.id]) bills[mk][t.id] = {};
+    bills[mk][t.id].extra = (Number(bills[mk][t.id].extra)||0) + each;
+    html += `<div class="ov-row"><span class="ov-label">${t.biz||t.name}</span><span class="ov-value">${fmtN(each)}원</span></div>`;
+  });
+  html += `<div style="font-size:11px;color:var(--text2);margin-top:8px;">※ 각 세입자 기타 부과금에 합산 반영</div></div>`;
+  el.innerHTML = html;
+  save(); renderHome();
+}
+
+// 특정 세입자의 이번 달 고지서 항목에 값 적용
+function applyToMk(tenantId, field, value) {
+  const mk = monthKey();
+  if (!bills[mk]) bills[mk] = {};
+  if (!bills[mk][tenantId]) bills[mk][tenantId] = {};
+  bills[mk][tenantId][field] = value;
+}
+// ---- Loans ----
+function calcLoanPreview() {
+  const p = Number(document.getElementById('input-loan-principal')?.value) || 0;
+  const r = Number(document.getElementById('input-loan-rate')?.value) || 0;
+  const el = document.getElementById('loan-preview');
+  const amtEl = document.getElementById('loan-preview-amount');
+  if (!el || !amtEl) return;
+  if (p && r) {
+    const monthly = Math.round(p * (r / 100) / 12);
+    amtEl.textContent = fmt(monthly);
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function openAddLoan() {
+  editingLoanId = null;
+  ['loan-name','loan-principal','loan-rate','loan-maturity'].forEach(f => {
+    const el = document.getElementById('input-'+f); if(el) el.value = '';
+  });
+  document.getElementById('loan-preview').style.display = 'none';
+  document.getElementById('modal-loan-title').textContent = '대출 추가';
+  openModal('modal-loan');
+}
+
+function editLoan(id) {
+  const l = loans.find(x => x.id === id); if (!l) return;
+  editingLoanId = id;
+  document.getElementById('input-loan-name').value = l.name || '';
+  document.getElementById('input-loan-principal').value = l.principal || '';
+  document.getElementById('input-loan-rate').value = l.rate || '';
+  document.getElementById('input-loan-maturity').value = l.maturity || '';
+  document.getElementById('modal-loan-title').textContent = '대출 수정';
+  calcLoanPreview();
+  openModal('modal-loan');
+}
+
+function saveLoan() {
+  const name = document.getElementById('input-loan-name').value.trim();
+  const principal = Number(document.getElementById('input-loan-principal').value) || 0;
+  const rate = Number(document.getElementById('input-loan-rate').value) || 0;
+  const maturity = document.getElementById('input-loan-maturity').value.trim();
+  if (!name || !principal || !rate) { showToast('대출명, 원금, 금리를 입력해주세요'); return; }
+  if (editingLoanId) {
+    const l = loans.find(x => x.id === editingLoanId);
+    if (l) { l.name = name; l.principal = principal; l.rate = rate; l.maturity = maturity; }
+  } else {
+    loans.push({ id: Date.now().toString(), name, principal, rate, maturity });
+  }
+  save(); closeModal('modal-loan'); renderLoanList(); renderHome(); showToast('저장됐어요 ✓');
+}
+
+function deleteLoan(id) {
+  if (!confirm('이 대출 정보를 삭제할까요?')) return;
+  loans = loans.filter(l => l.id !== id);
+  save(); renderLoanList(); renderHome(); showToast('삭제됐어요');
+}
+
+function renderLoanList() {
+  const el = document.getElementById('loan-list'); if (!el) return;
+  if (!loans.length) {
+    el.innerHTML = `<div class="empty" style="padding:16px;"><div class="empty-text" style="font-size:12px;color:var(--text3);">+ 대출 추가 버튼으로 등록하세요</div></div>`;
+    return;
+  }
+  el.innerHTML = loans.map(l => {
+    const monthly = Math.round(Number(l.principal) * (Number(l.rate)/100) / 12);
+    return `<div style="padding:12px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);">${l.name}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">원금 ${fmtN(l.principal)}원 · 연 ${l.rate}% ${l.maturity?'· 만기 '+l.maturity:''}</div>
+      </div>
+      <div style="text-align:right;display:flex;align-items:center;gap:10px;">
+        <div>
+          <div style="font-size:10px;color:var(--text3);">월 이자</div>
+          <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--red);">${fmt(monthly)}</div>
+        </div>
+        <button onclick="editLoan('${l.id}')" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text2);padding:5px 10px;border-radius:8px;font-size:11px;cursor:pointer;">수정</button>
+        <button onclick="deleteLoan('${l.id}')" style="background:rgba(192,57,43,0.1);border:1px solid rgba(192,57,43,0.3);color:var(--red);padding:5px 10px;border-radius:8px;font-size:11px;cursor:pointer;">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ---- History (고지서 + 내역 통합) ----
 function renderHistoryChips() {
   const el = document.getElementById('history-tenant-chips');
   if (!el) return;
@@ -620,80 +1067,106 @@ function renderHistoryChips() {
 }
 
 function selectHistoryTenant(id) {
+  // 처음 선택 시 이번 달 고지서부터 표시
   historyTenantId = id;
+  historyYear = currentYear;
+  historyMonth = currentMonth;
   renderHistoryChips();
-  renderHistoryList();
+  renderHistoryContent();
 }
 
-function renderHistoryList() {
-  const t = tenants.find(x=>x.id===historyTenantId);
-  if (!t) return;
-  const el = document.getElementById('history-list');
+function renderHistoryContent() {
+  const t = tenants.find(x => x.id === historyTenantId);
+  const navEl = document.getElementById('history-nav');
+  const contentEl = document.getElementById('history-content');
+  if (!t || !contentEl) return;
 
-  // 저장된 모든 월 목록 (최신순)
-  const months = Object.keys(bills).sort().reverse();
-  if (!months.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">저장된 고지서가 없어요</div></div>`;
+  // 네비게이션 표시
+  if (navEl) {
+    navEl.style.display = 'flex';
+    const lbl = document.getElementById('history-month-label');
+    if (lbl) lbl.textContent = `${historyYear}년 ${historyMonth}월`;
+  }
+
+  const mk = `${historyYear}-${String(historyMonth).padStart(2,'0')}`;
+  const b = (bills[mk] || {})[t.id];
+
+  if (!b) {
+    // 이 달 데이터 없으면 → 고지서 입력 화면
+    selectedTenantId = t.id;
+    // currentYear/Month를 historyYear/Month로 맞추고 폼 표시
+    const savedY = currentYear, savedM = currentMonth;
+    currentYear = historyYear; currentMonth = historyMonth;
+    const formHtml = buildBillFormHtml(t);
+    currentYear = savedY; currentMonth = savedM;
+    contentEl.innerHTML = formHtml;
     return;
   }
 
-  let html = '';
-  months.forEach(mk => {
-    const b = (bills[mk]||{})[t.id];
-    if (!b) return;
-    const [y, m] = mk.split('-');
-    const rent  = Number(b.rent  ?? t.rent)  || 0;
-    const mgmt  = Number(b.mgmt  ?? t.mgmt)  || 0;
-    const total = withVat(rent) + withVat(mgmt) + FIELDS.reduce((s,f)=>{
-      const v=Number(b[f.key])||0; return s+(f.vat?withVat(v):v);
-    },0);
-    const paid = b.paid || {};
-    const paidCount = Object.values(paid).filter(p=>p.date).length;
-    const totalItems = PAY_ITEMS.length;
+  // 데이터 있으면 요약 카드 + 수정 버튼
+  const rent = Number(t.rent)||0;
+  const mgmt = Number(t.mgmt)||0;
+  const elevVal = Number(t.elevator)||0;
+  const elec = Number(b.electricity)||0;
+  const water = Number(b.water)||0;
+  const waste = b.wasteNA ? 0 : (Number(b.waste)||0);
+  const total = withVat(rent)+withVat(mgmt)+(elevVal?withVat(elevVal):0)+withVat(elec)+water+waste;
+  const paid = b.paid || {};
+  const paidCount = PAY_ITEMS.filter(item => paid[item.key]?.date && !paid[item.key]?.na).length;
 
-    html += `<div class="card" style="margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div>
-          <div style="font-size:15px;font-weight:700;">${y}년 ${Number(m)}월</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:2px;">납부확인 ${paidCount}/${totalItems}건</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-family:'DM Mono',monospace;font-size:16px;font-weight:700;color:var(--accent);">${fmt(total)}</div>
-          <div style="font-size:11px;color:var(--text2);">부가세 포함</div>
-        </div>
-      </div>
-      <div style="font-size:13px;color:var(--text2);">
-        ${rent?`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span>월세</span><span style="font-family:'DM Mono',monospace;">${fmt(withVat(rent))}</span></div>`:''}
-        ${mgmt?`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span>관리비</span><span style="font-family:'DM Mono',monospace;">${fmt(withVat(mgmt))}</span></div>`:''}
-        ${FIELDS.map(f=>{
-          const v=Number(b[f.key])||0; if(!v) return '';
-          return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span>${f.label}</span><span style="font-family:'DM Mono',monospace;">${fmt(f.vat?withVat(v):v)}</span></div>`;
-        }).join('')}
-      </div>
-      ${paidCount>0?`<div style="margin-top:10px;font-size:12px;color:var(--green);">
-        ${PAY_ITEMS.filter(item=>paid[item.key]?.date).map(item=>`✅ ${item.label} ${paid[item.key].date} 입금확인`).join('<br>')}
-      </div>`:''}
-      <button onclick="switchTab('bill');setTimeout(()=>{currentYear=${y};currentMonth=${Number(m)};document.getElementById('currentMonth').textContent='${y}년 ${Number(m)}월';renderAll();selectBillTenant('${t.id}');},50)" 
-        style="margin-top:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:8px 14px;border-radius:8px;font-size:12px;cursor:pointer;width:100%;font-family:'Noto Sans KR',sans-serif;">
-        ✏️ 수정하기
-      </button>
-    </div>`;
-  });
+  const rows = [
+    rent ? `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--text2);">월세</span><span style="font-family:'DM Mono',monospace;">${fmt(withVat(rent))}</span></div>` : '',
+    mgmt ? `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--text2);">관리비</span><span style="font-family:'DM Mono',monospace;">${fmt(withVat(mgmt))}</span></div>` : '',
+    elevVal ? `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--text2);">엘리베이터</span><span style="font-family:'DM Mono',monospace;">${fmt(withVat(elevVal))}</span></div>` : '',
+    elec ? `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--text2);">공용전기세</span><span style="font-family:'DM Mono',monospace;">${fmt(withVat(elec))}</span></div>` : '',
+    water ? `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--text2);">수도요금</span><span style="font-family:'DM Mono',monospace;">${fmt(water)}</span></div>` : '',
+    waste ? `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;"><span style="color:var(--text2);">오물처리비</span><span style="font-family:'DM Mono',monospace;">${fmt(waste)}</span></div>` : '',
+  ].join('');
 
-  el.innerHTML = html || `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">이 세입자의 저장된 고지서가 없어요</div></div>`;
+  contentEl.innerHTML = `<div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">${t.biz||t.name} · ${historyYear}년 ${historyMonth}월</div>
+        <div class="card-subtitle">납부확인 ${paidCount}/${PAY_ITEMS.length}건</div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--gold);">${fmt(total)}</div>
+    </div>
+    <div>${rows}</div>
+    ${paidCount > 0 ? `<div style="margin-top:10px;font-size:12px;color:var(--green);">
+      ${PAY_ITEMS.filter(item=>paid[item.key]?.date&&!paid[item.key]?.na).map(item=>`✅ ${item.label} ${paid[item.key].date}`).join(' · ')}
+    </div>` : ''}
+    <button onclick="editThisMonth()" style="margin-top:12px;background:var(--goldbg2);border:1px solid var(--gold);color:var(--gold);padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;width:100%;font-family:'Noto Sans KR',sans-serif;">✏️ 수정하기</button>
+    <button onclick="previewKakao()" style="margin-top:8px;background:linear-gradient(135deg,#2d6a4f,#1b4332);border:none;color:var(--gold3);padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;width:100%;font-family:'Noto Sans KR',sans-serif;">💬 카카오 메시지</button>
+  </div>`;
+}
+
+function editThisMonth() {
+  const t = tenants.find(x => x.id === historyTenantId); if(!t) return;
+  selectedTenantId = historyTenantId;
+  const savedY = currentYear, savedM = currentMonth;
+  currentYear = historyYear; currentMonth = historyMonth;
+  const formHtml = buildBillFormHtml(t);
+  currentYear = savedY; currentMonth = savedM;
+  document.getElementById('history-content').innerHTML = formHtml;
 }
 
 // ---- Bill ----
 function renderBillChips() {
   const el=document.getElementById('bill-tenant-chips');
-  if(!tenants.length){el.innerHTML=`<div style="color:var(--text3);font-size:13px;padding:8px 0;">세입자를 먼저 추가해주세요</div>`;return;}
+  if(!el||!tenants.length) return;
   el.innerHTML=tenants.map(t=>`<div class="tenant-chip ${selectedTenantId===t.id?'active':''}" onclick="selectBillTenant('${t.id}')">${t.biz||t.name}</div>`).join('');
 }
 function selectBillTenant(id) { selectedTenantId=id; renderBillChips(); renderBillForm(); }
 
+
 function renderBillForm() {
   const t=tenants.find(x=>x.id===selectedTenantId); if(!t) return;
-  const mk=monthKey();
+  const el=document.getElementById('bill-form-wrap');
+  if(el) el.innerHTML = buildBillFormHtml(t);
+}
+
+function buildBillFormHtml(t) {
+  const mk=`${currentYear}-${String(currentMonth).padStart(2,'0')}`;
   const b=((bills[mk]||{})[t.id])||{};
   const rentVal=Number(b.rent??t.rent)||0;
   const mgmtVal=Number(b.mgmt??t.mgmt)||0;
@@ -776,7 +1249,7 @@ function renderBillForm() {
     </div>`;
   });
 
-  document.getElementById('bill-form-wrap').innerHTML=`
+  return `
     <div class="card">
       <div class="card-header">
         <div><div class="card-title">${t.biz||t.name} · ${t.unit}</div>
@@ -978,7 +1451,10 @@ function updateBillTotal() {
 }
 
 function saveBill() {
-  const mk=monthKey(); if(!bills[mk]) bills[mk]={};
+  // history 탭에서 수정 중이면 historyYear/Month 사용
+  const useYear = (selectedTenantId === historyTenantId && historyYear) ? historyYear : currentYear;
+  const useMonth = (selectedTenantId === historyTenantId && historyMonth) ? historyMonth : currentMonth;
+  const mk=`${useYear}-${String(useMonth).padStart(2,'0')}`; if(!bills[mk]) bills[mk]={};
   const prev = bills[mk][selectedTenantId] || {};
   const data = {
     electricity: document.getElementById('bill-electricity')?.value||0,
@@ -992,7 +1468,15 @@ function saveBill() {
   };
   if(prev.paid) data.paid = prev.paid;
   bills[mk][selectedTenantId]=data;
-  save(); renderHome(); showToast('저장되었습니다 ✓');
+  save(); renderHome();
+  // history 탭이면 내역 새로고침
+  if(selectedTenantId === historyTenantId) {
+    const savedY=currentYear, savedM=currentMonth;
+    currentYear=useYear; currentMonth=useMonth;
+    renderHistoryContent();
+    currentYear=savedY; currentMonth=savedM;
+  }
+  showToast('저장되었습니다 ✓');
 }
 
 // ---- Kakao ----
@@ -1046,6 +1530,25 @@ function previewKakao() {
     paidLines += `\n${currentMonth}월 ${item.short} (${period}) ${date} 입금확인하였습니다`;
   });
 
+  // 미입금 총액 계산 (납부확인 안 된 항목 합산)
+  const paidKeys = new Set(PAY_ITEMS.filter(item => {
+    const p = paid[item.key] || {};
+    return p.date && /\d/.test(p.date) && !p.na;
+  }).map(item => item.key));
+
+  let unpaidAmt = 0;
+  // 입금확인 안 된 항목만 합산
+  if (!paidKeys.has('pay_rent'))  unpaidAmt += withVat(rent);
+  if (!paidKeys.has('pay_mgmt'))  unpaidAmt += withVat(mgmt);
+  if (!paidKeys.has('pay_elec') && elec)  unpaidAmt += withVat(elec);
+  if (!paidKeys.has('pay_elev') && elev)  unpaidAmt += withVat(elev);
+  if (!paidKeys.has('pay_water') && water) unpaidAmt += water;
+  if (!paidKeys.has('pay_waste') && waste) unpaidAmt += waste;
+
+  const unpaidLine = unpaidAmt > 0
+    ? `\n미입금 총액 : ${fmtN(unpaidAmt)}원 입금 부탁드립니다~`
+    : `\n전액 입금 확인되었습니다. 감사합니다! 😊`;
+
   const renewPeriod = calcRenewPeriod(t.contract);
   const msg=
 `안녕하세요, [${t.biz||t.name}/${t.name}] 사장님.
@@ -1063,6 +1566,7 @@ ${currentYear}년도 ${mm}월 (${mm}/${lastDay}) 세금계산서 발급하였습
 * 임차인 본인 또는 대리인, 관리인의 간이 서명으로도 계약 효력이 인정됩니다.${waterLines ? '\n-------------------------'+waterLines : ''}
 -------------------------${billLines}
 -------------------------${paidLines}
+-------------------------${unpaidLine}
 -------------------------`;
 
   document.getElementById('kakao-msg-wrap').innerHTML=
@@ -1204,6 +1708,7 @@ function showToast(msg){
 
 // ---- Init ----
 renderAll();
+renderLoanList();
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 let deferredPrompt=null;
