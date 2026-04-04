@@ -264,9 +264,19 @@
         <div><div class="card-title">이번 달 현황</div><div class="card-subtitle" id="home-month-label">2026년 3월</div></div>
       </div>
       <div id="home-alerts"></div>
+      <!-- 차트 영역 -->
+      <canvas id="home-chart" height="180" style="width:100%;margin-bottom:16px;"></canvas>
       <div id="home-bill-list">
         <div class="empty"><div class="empty-icon">📋</div><div class="empty-text">세입자를 추가하고 고지서를 생성해보세요</div></div>
       </div>
+    </div>
+
+    <!-- 재계약 체크리스트 -->
+    <div class="card" id="renewal-checklist-card" style="display:none;">
+      <div class="card-header">
+        <div><div class="card-title">📋 재계약 체크리스트</div><div class="card-subtitle">갱신 가능 기간인 세입자</div></div>
+      </div>
+      <div id="renewal-checklist"></div>
     </div>
 
     <!-- 대출 현황 -->
@@ -278,40 +288,94 @@
       <div id="loan-list">
         <div class="empty" style="padding:20px;"><div class="empty-text">대출 정보를 추가해주세요</div></div>
       </div>
+      <!-- 대출 이자 합계 -->
+      <div id="loan-interest-summary" style="display:none;margin-top:12px;padding:12px;background:rgba(192,57,43,0.08);border:1px solid rgba(192,57,43,0.2);border-radius:10px;">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px;">이번 달 이자 지출 합계</div>
+        <div style="font-family:'DM Mono',monospace;font-size:22px;color:var(--red);font-weight:500;" id="loan-interest-total">₩0</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;" id="loan-interest-breakdown"></div>
+      </div>
+    </div>
+
+    <!-- 이번 달 지출 -->
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">🔧 건물 유지 · 수선 지출</div><div class="card-subtitle">공사비, 수리비 등 일회성 지출</div></div>
+        <button onclick="openAddExpense()" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text2);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">+ 지출 추가</button>
+      </div>
+      <div id="expense-list">
+        <div class="empty" style="padding:16px;"><div class="empty-text" style="font-size:12px;color:var(--text3);">이번 달 지출 내역이 없어요</div></div>
+      </div>
+      <div id="expense-total-wrap" style="display:none;margin-top:10px;padding:10px 12px;background:var(--surface2);border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:12px;color:var(--text2);">이번 달 지출 합계</span>
+        <span style="font-family:'DM Mono',monospace;font-size:15px;color:var(--red);font-weight:700;" id="expense-total">₩0</span>
+      </div>
     </div>
   </div>
 
   <!-- OVERVIEW -->
   <div id="section-overview" class="section">
+
+    <!-- 공용전기세 -->
     <div class="card">
       <div class="card-header">
         <div><div class="card-title">⚡ 공용전기세 배분</div><div class="card-subtitle" id="overview-month-label"></div></div>
       </div>
       <div class="field">
-        <label>이번 달 전기세 총액 (원, 부가세 제외)</label>
-        <input type="number" id="ov-elec-total" placeholder="예: 100000" oninput="calcOverviewElec()">
+        <label>이번 달 총 부과 금액 (원, 부가세 포함)</label>
+        <input type="number" id="ov-elec-total" placeholder="예: 115,500" oninput="calcOverviewElec()">
       </div>
       <div id="ov-elec-result"></div>
+      <div style="margin-top:12px;padding:10px 12px;background:var(--surface2);border-radius:8px;font-size:11px;color:var(--text3);line-height:1.8;">
+        ※ 배분 기준: 1층·5층 제외 / 2·3층 각 38,500원 고정 (공급가 35,000 + VAT 3,500) / 4층 = 총액 − (2층+3층 합계)
+      </div>
     </div>
+
+    <!-- 수도요금 -->
     <div class="card">
-      <div class="card-header"><div><div class="card-title">💧 수도요금 배분</div></div></div>
+      <div class="card-header"><div><div class="card-title">💧 수도요금 배분 (격월)</div></div></div>
+      <!-- 매달 사용량 기록 -->
+      <div class="section-label">📊 이번 달 사용량 기록</div>
+      <div id="ov-water-usage-inputs"></div>
+      <hr class="divider">
+      <!-- 격월 청구 시 -->
+      <div class="section-label">💰 격월 청구 금액 입력</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px;">청구 달에만 입력하세요. 비율: 2층 19 : 3층 10 : 4층 5</div>
       <div class="field-row">
         <div class="field"><label>총 청구금액 (원)</label><input type="number" id="ov-water-total" placeholder="예: 300000" oninput="calcOverviewWater()"></div>
-        <div class="field"><label>건물 총 사용량 (톤)</label><input type="number" id="ov-water-usage" placeholder="예: 177" oninput="calcOverviewWater()"></div>
+        <div class="field"><label>건물 총 사용량 (톤)</label><input type="number" id="ov-water-total-usage" placeholder="예: 177" oninput="calcOverviewWater()"></div>
       </div>
+      <div class="field"><label>1층 사용량 (톤)</label><input type="number" id="ov-water-floor1" placeholder="예: 41" oninput="calcOverviewWater()"></div>
       <div id="ov-water-result"></div>
     </div>
+
+    <!-- 오물처리비 -->
     <div class="card">
-      <div class="card-header"><div><div class="card-title">🗑️ 오물처리비 배분</div></div></div>
-      <div class="field"><label>총 오물처리비 (원, 부가세 제외)</label><input type="number" id="ov-waste-total" placeholder="예: 80000" oninput="calcOverviewWaste()"></div>
+      <div class="card-header"><div><div class="card-title">🗑️ 오물처리비 (연 1회)</div><div class="card-subtitle">금액 입력 시에만 부과됩니다</div></div></div>
+      <div class="field">
+        <label>총 오물처리비 (원) — 비워두면 미부과</label>
+        <input type="number" id="ov-waste-total" placeholder="금액 입력 시 부과됩니다" oninput="calcOverviewWaste()">
+      </div>
       <div id="ov-waste-result"></div>
     </div>
+
+    <!-- 엘리베이터 -->
     <div class="card">
-      <div class="card-header"><div><div class="card-title">📦 기타 공용요금 배분</div><div class="card-subtitle">모든 세입자에게 균등 배분</div></div></div>
+      <div class="card-header"><div><div class="card-title">🛗 엘리베이터 유지관리비</div><div class="card-subtitle">2·3·4층 균등 배분, 1층 제외</div></div></div>
+      <div class="field">
+        <label>이번 달 총 청구금액 (원, 부가세 제외)</label>
+        <input type="number" id="ov-elev-total" placeholder="예: 150000" oninput="calcOverviewElev()">
+      </div>
+      <div id="ov-elev-result"></div>
+    </div>
+
+    <!-- 기타 공용요금 -->
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">📦 기타 공용요금 균등 배분</div></div></div>
       <div class="field"><label>항목명</label><input type="text" id="ov-misc-label" placeholder="예: 소방점검비"></div>
       <div class="field"><label>총 금액 (원)</label><input type="number" id="ov-misc-total" placeholder="예: 120000" oninput="calcOverviewMisc()"></div>
       <div id="ov-misc-result"></div>
     </div>
+
   </div>
 
   <!-- HISTORY (고지서 + 내역 통합) -->
@@ -341,6 +405,16 @@
 
   <!-- SETTINGS -->
   <div id="section-settings" class="section">
+    <div class="card">
+      <div class="card-header"><div><div class="card-title">💧 수도요금 배분 비율 설정</div><div class="card-subtitle">2층 : 3층 : 4층</div></div></div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">1층은 실사용량 기반으로 먼저 계산 후 나머지를 아래 비율로 배분합니다</div>
+      <div class="field-row">
+        <div class="field"><label>2층 비율</label><input type="number" id="setting-water-r2" placeholder="19" min="1"></div>
+        <div class="field"><label>3층 비율</label><input type="number" id="setting-water-r3" placeholder="10" min="1"></div>
+        <div class="field"><label>4층 비율</label><input type="number" id="setting-water-r4" placeholder="5" min="1"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveWaterRatio()">💾 비율 저장</button>
+    </div>
     <div class="card">
       <div class="card-header"><div><div class="card-title">☁️ 구글 시트 동기화</div><div class="card-subtitle" id="sync-status">준비됨</div></div></div>
       <button class="btn btn-primary" onclick="syncToSheet()">☁️ 구글 시트에 저장</button>
@@ -448,6 +522,19 @@
   </div>
 </div>
 
+<!-- Expense Modal -->
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modal-expense')">✕</button>
+    <div class="modal-title" id="modal-expense-title">지출 추가</div>
+    <div class="field"><label>지출 항목명</label><input type="text" id="input-expense-name" placeholder="예: 오수관 정비공사"></div>
+    <div class="field"><label>지출 금액 (원)</label><input type="number" id="input-expense-amount" placeholder="예: 1500000"></div>
+    <div class="field"><label>날짜</label><input type="text" id="input-expense-date" placeholder="예: 2026/03/15"></div>
+    <div class="field"><label>비고 (선택)</label><input type="text" id="input-expense-memo" placeholder="예: 업체명, 영수증 번호 등"></div>
+    <button class="btn btn-primary" onclick="saveExpense()">저장</button>
+  </div>
+</div>
+
 <!-- Kakao Modal -->
 <div class="modal-overlay" id="modal-receipt">
   <div class="modal">
@@ -466,8 +553,11 @@ let currentYear = 2026, currentMonth = 3;
 let tenants = JSON.parse(localStorage.getItem('tenants') || '[]');
 let bills   = JSON.parse(localStorage.getItem('bills')   || '{}');
 let loans   = JSON.parse(localStorage.getItem('loans')   || '[]');
+let expenses = JSON.parse(localStorage.getItem('expenses') || '{}'); // { "YYYY-MM": [{id,name,amount,date,memo}] }
+let renewalDone = JSON.parse(localStorage.getItem('renewalDone') || '{}'); // { tenantId: contractEndDate }
 let editingTenantId = null, selectedTenantId = null;
 let editingLoanId = null;
+let editingExpenseId = null;
 let historyTenantId = null;
 let historyYear = currentYear, historyMonth = currentMonth;
 
@@ -499,6 +589,8 @@ const save    = () => {
   localStorage.setItem('tenants', JSON.stringify(tenants));
   localStorage.setItem('bills',   JSON.stringify(bills));
   localStorage.setItem('loans',   JSON.stringify(loans));
+  localStorage.setItem('expenses', JSON.stringify(expenses));
+  localStorage.setItem('renewalDone', JSON.stringify(renewalDone));
 };
 
 // ---- Sync ----
@@ -659,6 +751,97 @@ function renderHome() {
   const sb1 = document.getElementById('sidebar-total'); if(sb1) sb1.textContent = fmt(total);
   const sb2 = document.getElementById('sidebar-interest'); if(sb2) sb2.textContent = fmt(interest);
   const sb3 = document.getElementById('sidebar-net'); if(sb3) { sb3.textContent = fmt(net); sb3.style.color = net>=0?'var(--green)':'var(--red)'; }
+
+  // 재계약 체크리스트
+  renderRenewalChecklist();
+
+  // 대출 이자 합계
+  renderLoanInterestSummary();
+
+  // 지출 목록
+  renderExpenseList();
+
+  // 차트 그리기
+  renderHomeChart(mk);
+}
+
+function renderHomeChart(mk) {
+  const canvas = document.getElementById('home-chart');
+  if (!canvas || !tenants.length) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth - 32;
+  const H = 180;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  // 데이터
+  const data = tenants.map(t => {
+    const b = (bills[mk]||{})[t.id]||{};
+    return { name: t.biz||t.name, val: calcSaved(t, b) };
+  }).filter(d => d.val > 0);
+
+  if (!data.length) return;
+
+  const maxVal = Math.max(...data.map(d => d.val));
+  const barW = Math.min(50, (W - 40) / data.length - 12);
+  const chartH = H - 50;
+  const gold = '#c9a84c';
+  const gold2 = '#e8c97a';
+
+  // 격자 라인
+  ctx.strokeStyle = 'rgba(201,168,76,0.1)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = 10 + (chartH / 4) * i;
+    ctx.beginPath(); ctx.moveTo(30, y); ctx.lineTo(W - 10, y); ctx.stroke();
+    // 금액 라벨
+    const val = maxVal * (1 - i / 4);
+    ctx.fillStyle = 'rgba(138,125,104,0.7)';
+    ctx.font = `9px 'DM Mono', monospace`;
+    ctx.textAlign = 'right';
+    ctx.fillText(fmtShort(val), 28, y + 3);
+  }
+
+  // 바 그리기
+  const totalBars = data.length;
+  const spacing = (W - 30) / totalBars;
+
+  data.forEach((d, i) => {
+    const x = 30 + spacing * i + spacing / 2 - barW / 2;
+    const barH = Math.max(4, (d.val / maxVal) * chartH);
+    const y = 10 + chartH - barH;
+
+    // 그라디언트
+    const grad = ctx.createLinearGradient(x, y, x, y + barH);
+    grad.addColorStop(0, gold2);
+    grad.addColorStop(1, 'rgba(201,168,76,0.3)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, barH, [4, 4, 0, 0]);
+    ctx.fill();
+
+    // 금액
+    ctx.fillStyle = gold2;
+    ctx.font = `bold 9px 'DM Mono', monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillText(fmtShort(d.val), x + barW/2, y - 4);
+
+    // 이름
+    ctx.fillStyle = 'rgba(138,125,104,0.9)';
+    ctx.font = `10px 'Noto Sans KR', sans-serif`;
+    ctx.fillText(d.name.length > 5 ? d.name.slice(0,5)+'…' : d.name, x + barW/2, H - 8);
+  });
+}
+
+function fmtShort(n) {
+  if (n >= 100000000) return (n/100000000).toFixed(1)+'억';
+  if (n >= 10000) return Math.round(n/10000)+'만';
+  return fmtN(n);
 }
 
 function goToHistory(tenantId) {
@@ -810,48 +993,106 @@ function renderOverview() {
   calcOverviewWater();
 }
 
+// ---- Settings ----
+let waterRatio = JSON.parse(localStorage.getItem('waterRatio') || '{"r2":19,"r3":10,"r4":5}');
+
+function saveWaterRatio() {
+  const r2 = Number(document.getElementById('setting-water-r2')?.value) || 19;
+  const r3 = Number(document.getElementById('setting-water-r3')?.value) || 10;
+  const r4 = Number(document.getElementById('setting-water-r4')?.value) || 5;
+  waterRatio = { r2, r3, r4 };
+  localStorage.setItem('waterRatio', JSON.stringify(waterRatio));
+  showToast('비율 저장됐어요 ✓');
+}
+
+function loadWaterRatioInputs() {
+  const el2 = document.getElementById('setting-water-r2');
+  const el3 = document.getElementById('setting-water-r3');
+  const el4 = document.getElementById('setting-water-r4');
+  if(el2) el2.value = waterRatio.r2;
+  if(el3) el3.value = waterRatio.r3;
+  if(el4) el4.value = waterRatio.r4;
+}
+
+// ---- Overview ----
+function renderOverview() {
+  const el = document.getElementById('overview-month-label');
+  if (el) el.textContent = `${currentYear}년 ${currentMonth}월`;
+  loadWaterRatioInputs();
+  renderWaterUsageInputs();
+}
+
+// 수도 월별 사용량 입력 필드 (매달 기록용)
+function renderWaterUsageInputs() {
+  const el = document.getElementById('ov-water-usage-inputs');
+  if (!el) return;
+  const mk = monthKey();
+  // 1~4층 세입자 표시 (floor 기준)
+  const floorTenants = tenants.filter(t => t.unit);
+  if (!floorTenants.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text3);">세입자를 먼저 등록하세요</div>';
+    return;
+  }
+  el.innerHTML = floorTenants.map(t => {
+    const saved = (bills[mk]||{})[t.id]?.waterMeterVal || '';
+    return `<div class="field-row" style="align-items:center;">
+      <div class="field" style="flex:0.6;"><label>${t.biz||t.name} (${t.unit})</label></div>
+      <div class="field" style="flex:1;">
+        <input type="number" id="ov-wm-${t.id}" placeholder="이번 달 계량값 (톤)" value="${saved}"
+          oninput="saveWaterMeterVal('${t.id}', this.value)">
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function saveWaterMeterVal(tenantId, val) {
+  const mk = monthKey();
+  if(!bills[mk]) bills[mk]={};
+  if(!bills[mk][tenantId]) bills[mk][tenantId]={};
+  bills[mk][tenantId].waterMeterVal = Number(val)||0;
+  save();
+}
+
+// ⚡ 공용전기세: 1·5층 제외, 2·3층 고정 38500, 4층 나머지
 function calcOverviewElec() {
-  const total = Number(document.getElementById('ov-elec-total')?.value) || 0;
+  const totalInput = Number(document.getElementById('ov-elec-total')?.value) || 0;
   const el = document.getElementById('ov-elec-result');
   if (!el) return;
-  if (!total) { el.innerHTML = ''; return; }
+  if (!totalInput) { el.innerHTML = ''; return; }
 
-  // 고정 세입자 배분 (elecType=fixed)
-  const fixedTenants = tenants.filter(t => t.elecType === 'fixed');
-  const fixedSum = fixedTenants.reduce((s,t) => s + (Number(t.elecFixed)||0), 0);
-  const remainAmt = total - fixedSum;
+  const fixed2 = 38500; // VAT 포함 고정
+  const fixed3 = 38500;
+  const fixedSum = fixed2 + fixed3;
+  const remain4 = totalInput - fixedSum;
 
-  let html = `<div style="margin-top:10px;font-size:13px;">
-    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">1톤당 단가 기준 배분 결과</div>`;
+  let html = `<div style="margin-top:10px;font-size:13px;">`;
 
-  // 고정 세입자
-  fixedTenants.forEach(t => {
-    const amt = Number(t.elecFixed)||0;
-    html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
-      <span style="color:var(--text2);">${t.biz||t.name} (고정)</span>
-      <span style="font-family:'DM Mono',monospace;">공급가 ${fmtN(amt)}원 → 청구 <strong style="color:var(--accent);">${fmtN(withVat(amt))}원</strong></span>
+  tenants.forEach(t => {
+    const unit = t.unit || '';
+    const isFloor1 = unit.includes('1') && !unit.includes('10');
+    const isFloor2 = unit.includes('2');
+    const isFloor3 = unit.includes('3');
+    const isFloor4 = unit.includes('4');
+    const isFloor5 = unit.includes('5');
+
+    let amt = 0, tag = '', color = 'var(--text3)';
+
+    if (isFloor2) { amt = 35000; tag = '고정 38,500원 (공급가 35,000)'; color = 'var(--gold)'; }
+    else if (isFloor3) { amt = 35000; tag = '고정 38,500원 (공급가 35,000)'; color = 'var(--gold)'; }
+    else if (isFloor4 && remain4 > 0) {
+      const supply = Math.round(remain4 / 1.1);
+      amt = supply; tag = `나머지 ${fmtN(remain4)}원 (공급가 ${fmtN(supply)})`;
+      color = 'var(--green)';
+    } else {
+      tag = '미부과 (배분 제외)';
+    }
+
+    html += `<div class="ov-row">
+      <span class="ov-label">${t.biz||t.name} (${t.unit})</span>
+      <span style="font-size:12px;color:${color};font-family:'DM Mono',monospace;">${tag}</span>
     </div>`;
-    // 고지서에 즉시 반영
+
     applyToMk(t.id, 'electricity', amt);
-  });
-
-  // 나머지 세입자
-  const remainTenants = tenants.filter(t => t.elecType === 'remain');
-  remainTenants.forEach(t => {
-    html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
-      <span style="color:var(--text2);">${t.biz||t.name} (나머지)</span>
-      <span style="font-family:'DM Mono',monospace;">공급가 ${fmtN(remainAmt)}원 → 청구 <strong style="color:var(--green);">${fmtN(withVat(remainAmt))}원</strong></span>
-    </div>`;
-    applyToMk(t.id, 'electricity', remainAmt);
-  });
-
-  // 미부과 세입자
-  tenants.filter(t=>t.elecType==='none').forEach(t => {
-    html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
-      <span style="color:var(--text3);">${t.biz||t.name}</span>
-      <span style="color:var(--text3);">미부과</span>
-    </div>`;
-    applyToMk(t.id, 'electricity', 0);
   });
 
   html += `</div>`;
@@ -859,63 +1100,51 @@ function calcOverviewElec() {
   save(); renderHome();
 }
 
+// 💧 수도요금: 1층 실사용 기반, 2·3·4층 = 잔여를 비율로 배분
 function calcOverviewWater() {
   const totalAmt = Number(document.getElementById('ov-water-total')?.value) || 0;
-  const totalUsage = Number(document.getElementById('ov-water-usage')?.value) || 0;
+  const totalUsage = Number(document.getElementById('ov-water-total-usage')?.value) || 0;
+  const floor1Usage = Number(document.getElementById('ov-water-floor1')?.value) || 0;
   const el = document.getElementById('ov-water-result');
   if (!el) return;
   if (!totalAmt || !totalUsage) { el.innerHTML = ''; return; }
 
   const perTon = totalAmt / totalUsage;
+  const floor1Amt = Math.round(floor1Usage * perTon);
+  const remainAmt = totalAmt - floor1Amt;
 
-  // 각 세입자 2개월 사용량 계산
-  const usages = tenants.map(t => {
-    const wh = (t.waterHistory||[]);
-    let usage2m = null;
-    if (wh.length >= 2) {
-      const latest = wh[wh.length-1];
-      const twoAgo = wh.length >= 3 ? wh[wh.length-3] : wh[0];
-      usage2m = latest.val - twoAgo.val;
-    }
-    return { t, usage2m };
-  });
+  const { r2, r3, r4 } = waterRatio;
+  const ratioSum = r2 + r3 + r4;
 
-  // 1층 먼저 배분 (사용량 직접)
-  let remainUsage = totalUsage;
-  let remainAmt = totalAmt;
+  const floor2Amt = Math.round(remainAmt * r2 / ratioSum);
+  const floor3Amt = Math.round(remainAmt * r3 / ratioSum);
+  const floor4Amt = remainAmt - floor2Amt - floor3Amt;
+
   let html = `<div style="margin-top:10px;font-size:13px;">
-    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">1톤당 단가: ${fmtN(Math.round(perTon))}원</div>`;
-
-  // 1층~3층: 실제 사용량 기반
-  const directTenants = usages.filter(u => u.t.elecType !== 'none' && u.usage2m !== null);
-  // 4층 (3층 75% 적용)
-  const floor3 = usages.find(u => u.usage2m !== null && u.t.unit && u.t.unit.includes('3'));
-  const floor4 = usages.find(u => u.t.unit && u.t.unit.includes('4'));
-
-  usages.forEach(({t, usage2m}) => {
-    let myUsage = usage2m;
-    let label = '';
-
-    // 4층이고 3층 데이터 있으면 75% 적용
-    if (t.unit && t.unit.includes('4') && floor3 && floor3.usage2m !== null) {
-      myUsage = Math.round(floor3.usage2m * 0.75);
-      label = ' (3층×75%)';
-    }
-
-    if (myUsage === null) {
-      html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
-        <span style="color:var(--text3);">${t.biz||t.name}</span>
-        <span style="color:var(--text3);">계량기 이력 없음</span>
-      </div>`;
-      return;
-    }
-
-    const myAmt = Math.round(myUsage * perTon);
-    html += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);">
-      <span style="color:var(--text2);">${t.biz||t.name}${label}</span>
-      <span style="font-family:'DM Mono',monospace;">${fmtN(myUsage)}톤 → <strong style="color:var(--accent);">${fmtN(myAmt)}원</strong></span>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">
+      1톤당: ${fmtN(Math.round(perTon))}원 · 1층 ${fmtN(floor1Usage)}톤 우선 배분 → 잔여 ${fmtN(remainAmt)}원을 ${r2}:${r3}:${r4} 배분
     </div>`;
-    applyToMk(t.id, 'water', myAmt);
+
+  tenants.forEach(t => {
+    const unit = t.unit || '';
+    const isFloor1 = unit.includes('1') && !unit.includes('10');
+    const isFloor2 = unit.includes('2');
+    const isFloor3 = unit.includes('3');
+    const isFloor4 = unit.includes('4');
+
+    let amt = 0, tag = '', color = 'var(--text2)';
+    if (isFloor1) { amt = floor1Amt; tag = `${fmtN(floor1Usage)}톤 × ${fmtN(Math.round(perTon))}원`; color = 'var(--gold)'; }
+    else if (isFloor2) { amt = floor2Amt; tag = `비율 ${r2}/${ratioSum}`; color = 'var(--gold)'; }
+    else if (isFloor3) { amt = floor3Amt; tag = `비율 ${r3}/${ratioSum}`; color = 'var(--gold)'; }
+    else if (isFloor4) { amt = floor4Amt; tag = `비율 ${r4}/${ratioSum}`; color = 'var(--gold)'; }
+    else { tag = '배분 제외'; color = 'var(--text3)'; }
+
+    html += `<div class="ov-row">
+      <div><span class="ov-label">${t.biz||t.name} (${t.unit})</span><span style="font-size:11px;color:var(--text3);margin-left:6px;">${tag}</span></div>
+      <span class="ov-value" style="color:${color};">${fmtN(amt)}원</span>
+    </div>`;
+
+    if(amt > 0) applyToMk(t.id, 'water', amt);
   });
 
   html += `</div>`;
@@ -923,17 +1152,33 @@ function calcOverviewWater() {
   save(); renderHome();
 }
 
+// 🗑️ 오물처리비: 금액 입력 시에만 부과
 function calcOverviewWaste() {
   const total = Number(document.getElementById('ov-waste-total')?.value) || 0;
   const el = document.getElementById('ov-waste-result');
   if (!el) return;
-  if (!total) { el.innerHTML = ''; return; }
+
+  if (!total) {
+    el.innerHTML = `<div style="font-size:12px;color:var(--text3);padding:6px 0;">금액 미입력 → 전 세입자 미부과</div>`;
+    // 미부과 처리
+    tenants.forEach(t => {
+      applyToMk(t.id, 'waste', 0);
+      const mk = monthKey();
+      if(bills[mk]?.[t.id]) bills[mk][t.id].wasteNA = true;
+    });
+    save();
+    return;
+  }
+
   const count = tenants.length;
   if (!count) { el.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:6px 0;">세입자가 없어요</div>'; return; }
   const each = Math.round(total / count);
+
   let html = `<div style="margin-top:10px;font-size:13px;">
     <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">${fmtN(total)}원 ÷ ${count}명 = 1인당 ${fmtN(each)}원</div>`;
   tenants.forEach(t => {
+    const mk = monthKey();
+    if(bills[mk]?.[t.id]) bills[mk][t.id].wasteNA = false;
     html += `<div class="ov-row"><span class="ov-label">${t.biz||t.name}</span><span class="ov-value">${fmtN(each)}원</span></div>`;
     applyToMk(t.id, 'waste', each);
   });
@@ -942,6 +1187,49 @@ function calcOverviewWaste() {
   save(); renderHome();
 }
 
+// 🛗 엘리베이터: 1층 제외, 2·3·4층 균등 배분, 공급가·VAT 분리
+function calcOverviewElev() {
+  const totalSupply = Number(document.getElementById('ov-elev-total')?.value) || 0;
+  const el = document.getElementById('ov-elev-result');
+  if (!el) return;
+  if (!totalSupply) { el.innerHTML = ''; return; }
+
+  // 1층 제외한 층 세입자
+  const eligible = tenants.filter(t => {
+    const unit = t.unit || '';
+    return !(unit.includes('1') && !unit.includes('10'));
+  });
+
+  if (!eligible.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:6px 0;">해당 세입자 없음</div>'; return; }
+
+  const supplyEach = Math.round(totalSupply / eligible.length);
+  const vatEach = Math.round(supplyEach * 0.1);
+  const totalEach = supplyEach + vatEach;
+
+  let html = `<div style="margin-top:10px;font-size:13px;">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">공급가 ${fmtN(totalSupply)}원 ÷ ${eligible.length}명 = 1인당 공급가 ${fmtN(supplyEach)}원 + VAT ${fmtN(vatEach)}원 = ${fmtN(totalEach)}원</div>`;
+
+  tenants.forEach(t => {
+    const unit = t.unit || '';
+    const isFloor1 = unit.includes('1') && !unit.includes('10');
+    if (isFloor1) {
+      html += `<div class="ov-row"><span class="ov-label">${t.biz||t.name} (${t.unit})</span><span style="color:var(--text3);font-size:12px;">미부과 (1층 제외)</span></div>`;
+      applyToMk(t.id, 'elevator', 0);
+    } else if (eligible.find(e => e.id === t.id)) {
+      html += `<div class="ov-row">
+        <span class="ov-label">${t.biz||t.name} (${t.unit})</span>
+        <span class="ov-value">공급가 ${fmtN(supplyEach)} + VAT ${fmtN(vatEach)} = <strong>${fmtN(totalEach)}원</strong></span>
+      </div>`;
+      applyToMk(t.id, 'elevator', supplyEach);
+    }
+  });
+
+  html += `</div>`;
+  el.innerHTML = html;
+  save(); renderHome();
+}
+
+// 📦 기타 공용요금 균등 배분
 function calcOverviewMisc() {
   const total = Number(document.getElementById('ov-misc-total')?.value) || 0;
   const label = document.getElementById('ov-misc-label')?.value || '기타';
@@ -1054,6 +1342,190 @@ function renderLoanList() {
       </div>
     </div>`;
   }).join('');
+}
+
+function renderLoanList() {
+  const el = document.getElementById('loan-list'); if (!el) return;
+  if (!loans.length) {
+    el.innerHTML = `<div class="empty" style="padding:16px;"><div class="empty-text" style="font-size:12px;color:var(--text3);">+ 대출 추가 버튼으로 등록하세요</div></div>`;
+    return;
+  }
+  el.innerHTML = loans.map(l => {
+    const principal = Number(l.principal)||0;
+    const rate = Number(l.rate)||0;
+    const monthly = Math.round(principal * (rate/100) / 12);
+    const annualInterest = Math.round(principal * rate / 100);
+    return `<div style="padding:13px 0;border-bottom:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:700;color:var(--text);">${l.name}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px;">
+            원금 <span style="font-family:'DM Mono',monospace;">${fmtN(principal)}</span>원 · 연 ${rate}%
+            ${l.maturity ? ` · 만기 ${l.maturity}` : ''}
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">
+            연간 이자 <span style="font-family:'DM Mono',monospace;color:var(--red);">${fmtN(annualInterest)}</span>원
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:10px;color:var(--text3);margin-bottom:2px;">월 이자 지출</div>
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:700;color:var(--red);">${fmt(monthly)}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button onclick="editLoan('${l.id}')" style="flex:1;background:var(--surface2);border:1px solid var(--border2);color:var(--text2);padding:7px;border-radius:8px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">수정</button>
+        <button onclick="deleteLoan('${l.id}')" style="flex:1;background:rgba(192,57,43,0.1);border:1px solid rgba(192,57,43,0.3);color:var(--red);padding:7px;border-radius:8px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLoanInterestSummary() {
+  const summaryEl = document.getElementById('loan-interest-summary');
+  const totalEl = document.getElementById('loan-interest-total');
+  const breakdownEl = document.getElementById('loan-interest-breakdown');
+  if (!summaryEl || !loans.length) { if(summaryEl) summaryEl.style.display='none'; return; }
+
+  const total = calcMonthlyInterest();
+  summaryEl.style.display = 'block';
+  totalEl.textContent = fmt(total);
+  breakdownEl.innerHTML = loans.map(l => {
+    const monthly = Math.round(Number(l.principal) * (Number(l.rate)/100) / 12);
+    return `${l.name}: ${fmt(monthly)}`;
+  }).join(' · ');
+}
+
+// ---- Renewal Checklist ----
+function renderRenewalChecklist() {
+  const card = document.getElementById('renewal-checklist-card');
+  const listEl = document.getElementById('renewal-checklist');
+  if (!card || !listEl) return;
+
+  const today = new Date();
+  const items = [];
+
+  tenants.forEach(t => {
+    const renew = calcRenewPeriod(t.contract);
+    if (!renew) return;
+    const { start, end, str } = renew;
+
+    // 이미 처리됐는지 확인 (renewalDone에 이번 계약 종료일이 저장돼 있으면 skip)
+    const contractEnd = (t.contract||'').split('~').map(s=>s.trim())[1]||'';
+    if (renewalDone[t.id] === contractEnd) return;
+
+    // 갱신 기간 중인 경우만 표시
+    if (today >= start && today <= end) {
+      items.push({ t, str, contractEnd });
+    }
+  });
+
+  if (!items.length) {
+    card.style.display = 'none';
+    return;
+  }
+
+  card.style.display = 'block';
+  listEl.innerHTML = items.map(({ t, str, contractEnd }) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);">${t.biz||t.name} <span style="font-size:11px;color:var(--text2);">${t.unit}</span></div>
+        <div style="font-size:11px;color:var(--gold);margin-top:2px;">갱신 가능: ${str}</div>
+      </div>
+      <button onclick="markRenewalDone('${t.id}','${contractEnd}')"
+        style="background:linear-gradient(135deg,#c9a84c,#a8862e);border:none;color:#0a0a0a;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;white-space:nowrap;flex-shrink:0;margin-left:10px;">
+        갱신 완료 ✓
+      </button>
+    </div>`).join('');
+}
+
+function markRenewalDone(tenantId, contractEnd) {
+  renewalDone[tenantId] = contractEnd;
+  save();
+  renderRenewalChecklist();
+  showToast('갱신 완료 처리됐어요 ✓');
+}
+
+// ---- Expenses ----
+function openAddExpense() {
+  editingExpenseId = null;
+  ['expense-name','expense-amount','expense-date','expense-memo'].forEach(f => {
+    const el = document.getElementById('input-'+f); if(el) el.value='';
+  });
+  // 날짜 기본값
+  const today = new Date();
+  document.getElementById('input-expense-date').value =
+    `${today.getFullYear()}/${String(today.getMonth()+1).padStart(2,'0')}/${String(today.getDate()).padStart(2,'0')}`;
+  document.getElementById('modal-expense-title').textContent = '지출 추가';
+  openModal('modal-expense');
+}
+
+function editExpense(id) {
+  const mk = monthKey();
+  const list = (expenses[mk]||[]);
+  const exp = list.find(e=>e.id===id); if(!exp) return;
+  editingExpenseId = id;
+  document.getElementById('input-expense-name').value = exp.name||'';
+  document.getElementById('input-expense-amount').value = exp.amount||'';
+  document.getElementById('input-expense-date').value = exp.date||'';
+  document.getElementById('input-expense-memo').value = exp.memo||'';
+  document.getElementById('modal-expense-title').textContent = '지출 수정';
+  openModal('modal-expense');
+}
+
+function saveExpense() {
+  const name = document.getElementById('input-expense-name').value.trim();
+  const amount = Number(document.getElementById('input-expense-amount').value)||0;
+  const date = document.getElementById('input-expense-date').value.trim();
+  const memo = document.getElementById('input-expense-memo').value.trim();
+  if(!name||!amount) { showToast('항목명과 금액을 입력해주세요'); return; }
+
+  const mk = monthKey();
+  if(!expenses[mk]) expenses[mk]=[];
+  if(editingExpenseId) {
+    const idx = expenses[mk].findIndex(e=>e.id===editingExpenseId);
+    if(idx>=0) expenses[mk][idx] = { id:editingExpenseId, name, amount, date, memo };
+  } else {
+    expenses[mk].push({ id:Date.now().toString(), name, amount, date, memo });
+  }
+  save(); closeModal('modal-expense'); renderExpenseList(); showToast('저장됐어요 ✓');
+}
+
+function deleteExpense(id) {
+  if(!confirm('이 지출 항목을 삭제할까요?')) return;
+  const mk = monthKey();
+  expenses[mk] = (expenses[mk]||[]).filter(e=>e.id!==id);
+  save(); renderExpenseList(); showToast('삭제됐어요');
+}
+
+function renderExpenseList() {
+  const el = document.getElementById('expense-list'); if(!el) return;
+  const mk = monthKey();
+  const list = expenses[mk]||[];
+  const totalWrap = document.getElementById('expense-total-wrap');
+  const totalEl = document.getElementById('expense-total');
+
+  if(!list.length) {
+    el.innerHTML = `<div class="empty" style="padding:14px;"><div class="empty-text" style="font-size:12px;color:var(--text3);">이번 달 지출 내역이 없어요</div></div>`;
+    if(totalWrap) totalWrap.style.display='none';
+    return;
+  }
+
+  const totalAmt = list.reduce((s,e)=>s+Number(e.amount),0);
+  el.innerHTML = list.map(e=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);">${e.name}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">${e.date||''}${e.memo?' · '+e.memo:''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:10px;">
+        <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--red);">${fmt(e.amount)}</div>
+        <button onclick="editExpense('${e.id}')" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text2);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;">수정</button>
+        <button onclick="deleteExpense('${e.id}')" style="background:rgba(192,57,43,0.1);border:1px solid rgba(192,57,43,0.3);color:var(--red);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;">삭제</button>
+      </div>
+    </div>`).join('');
+
+  if(totalWrap) { totalWrap.style.display='flex'; }
+  if(totalEl) totalEl.textContent = fmt(totalAmt);
 }
 
 // ---- History (고지서 + 내역 통합) ----
@@ -1699,6 +2171,175 @@ document.querySelectorAll('.modal-overlay').forEach(m=>{
   m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});
 });
 
+// ---- Renewal Checklist ----
+function renderRenewalChecklist() {
+  const card = document.getElementById('renewal-checklist-card');
+  const el = document.getElementById('renewal-checklist');
+  if (!card || !el) return;
+
+  const today = new Date();
+  const items = [];
+
+  tenants.forEach(t => {
+    const renew = calcRenewPeriod(t.contract);
+    if (!renew) return;
+    const { start, end } = renew;
+
+    // 기간 내인지 확인
+    if (today < start || today > end) return;
+
+    // 이미 갱신 완료 처리됐는지 확인 (저장된 계약 종료일 기준)
+    const contractEnd = t.contract?.split('~')[1]?.trim();
+    if (renewalDone[t.id] === contractEnd) return;
+
+    items.push({ t, renew, contractEnd });
+  });
+
+  if (!items.length) {
+    card.style.display = 'none';
+    return;
+  }
+
+  card.style.display = 'block';
+  el.innerHTML = items.map(({ t, renew }) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--text);">${t.biz||t.name}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">갱신 가능: ${renew.str}</div>
+      </div>
+      <button onclick="completeRenewal('${t.id}')"
+        style="background:linear-gradient(135deg,#c9a84c,#a8862e);border:none;color:#0a0a0a;
+        padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;
+        cursor:pointer;font-family:'Noto Sans KR',sans-serif;white-space:nowrap;">
+        ✓ 갱신 완료
+      </button>
+    </div>`).join('');
+}
+
+function completeRenewal(tenantId) {
+  const t = tenants.find(x => x.id === tenantId);
+  if (!t) return;
+  const contractEnd = t.contract?.split('~')[1]?.trim();
+  renewalDone[tenantId] = contractEnd;
+  save();
+  renderRenewalChecklist();
+  showToast(`${t.biz||t.name} 갱신 완료 처리됐어요 ✓`);
+}
+
+// ---- Loan Interest Summary ----
+function renderLoanInterestSummary() {
+  const wrap = document.getElementById('loan-interest-summary');
+  const totalEl = document.getElementById('loan-interest-total');
+  const breakEl = document.getElementById('loan-interest-breakdown');
+  if (!wrap || !totalEl) return;
+
+  if (!loans.length) { wrap.style.display = 'none'; return; }
+
+  wrap.style.display = 'block';
+  const totalInterest = loans.reduce((s, l) => {
+    return s + Math.round(Number(l.principal) * (Number(l.rate)/100) / 12);
+  }, 0);
+
+  totalEl.textContent = fmt(totalInterest);
+
+  if (breakEl) {
+    breakEl.innerHTML = loans.map(l => {
+      const monthly = Math.round(Number(l.principal) * (Number(l.rate)/100) / 12);
+      const annualTotal = monthly * 12;
+      return `<span style="margin-right:12px;">${l.name}: ${fmt(monthly)}/월 (연 ${fmt(annualTotal)})</span>`;
+    }).join('');
+  }
+}
+
+// ---- Expenses ----
+function openAddExpense() {
+  editingExpenseId = null;
+  document.getElementById('modal-expense-title').textContent = '지출 추가';
+  ['expense-name','expense-amount','expense-date','expense-memo'].forEach(id => {
+    const el = document.getElementById('input-'+id); if(el) el.value = '';
+  });
+  openModal('modal-expense');
+}
+
+function editExpense(id) {
+  const mk = monthKey();
+  const list = (expenses[mk]||[]);
+  const item = list.find(x => x.id === id);
+  if (!item) return;
+  editingExpenseId = id;
+  document.getElementById('modal-expense-title').textContent = '지출 수정';
+  document.getElementById('input-expense-name').value = item.name || '';
+  document.getElementById('input-expense-amount').value = item.amount || '';
+  document.getElementById('input-expense-date').value = item.date || '';
+  document.getElementById('input-expense-memo').value = item.memo || '';
+  openModal('modal-expense');
+}
+
+function saveExpense() {
+  const name = document.getElementById('input-expense-name').value.trim();
+  const amount = Number(document.getElementById('input-expense-amount').value) || 0;
+  const date = document.getElementById('input-expense-date').value.trim();
+  const memo = document.getElementById('input-expense-memo').value.trim();
+  if (!name || !amount) { showToast('항목명과 금액을 입력해주세요'); return; }
+
+  const mk = monthKey();
+  if (!expenses[mk]) expenses[mk] = [];
+
+  if (editingExpenseId) {
+    const idx = expenses[mk].findIndex(x => x.id === editingExpenseId);
+    if (idx !== -1) expenses[mk][idx] = { id: editingExpenseId, name, amount, date, memo };
+  } else {
+    expenses[mk].push({ id: Date.now().toString(), name, amount, date, memo });
+  }
+
+  save();
+  closeModal('modal-expense');
+  renderExpenseList();
+  renderHome();
+  showToast('저장됐어요 ✓');
+}
+
+function deleteExpense(id) {
+  if (!confirm('이 지출을 삭제할까요?')) return;
+  const mk = monthKey();
+  expenses[mk] = (expenses[mk]||[]).filter(x => x.id !== id);
+  save(); renderExpenseList(); renderHome(); showToast('삭제됐어요');
+}
+
+function renderExpenseList() {
+  const el = document.getElementById('expense-list');
+  const totalWrap = document.getElementById('expense-total-wrap');
+  const totalEl = document.getElementById('expense-total');
+  if (!el) return;
+
+  const mk = monthKey();
+  const list = expenses[mk] || [];
+
+  if (!list.length) {
+    el.innerHTML = `<div class="empty" style="padding:16px;"><div class="empty-text" style="font-size:12px;color:var(--text3);">이번 달 지출 내역이 없어요</div></div>`;
+    if (totalWrap) totalWrap.style.display = 'none';
+    return;
+  }
+
+  const total = list.reduce((s, x) => s + (Number(x.amount)||0), 0);
+
+  el.innerHTML = list.map(item => `
+    <div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);">${item.name}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">${item.date||'날짜 미입력'}${item.memo?' · '+item.memo:''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--red);">${fmt(item.amount)}</div>
+        <button onclick="editExpense('${item.id}')" style="background:var(--surface2);border:1px solid var(--border2);color:var(--text2);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;">수정</button>
+        <button onclick="deleteExpense('${item.id}')" style="background:rgba(192,57,43,0.1);border:1px solid rgba(192,57,43,0.3);color:var(--red);padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;">삭제</button>
+      </div>
+    </div>`).join('');
+
+  if (totalWrap) { totalWrap.style.display = 'flex'; }
+  if (totalEl) totalEl.textContent = fmt(total);
+}
+
 // ---- Toast ----
 function showToast(msg){
   const t=document.getElementById('toast');
@@ -1709,6 +2350,7 @@ function showToast(msg){
 // ---- Init ----
 renderAll();
 renderLoanList();
+renderExpenseList();
 
 if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
 let deferredPrompt=null;
