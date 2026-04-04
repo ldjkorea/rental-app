@@ -321,7 +321,7 @@
         <div><div class="card-title">⚡ 공용전기세 배분</div><div class="card-subtitle" id="overview-month-label"></div></div>
       </div>
       <div class="field">
-        <label>이번 달 총 부과 금액 (원, 부가세 포함)</label>
+        <label>이번 달 총 공급가 (원, 부가세 제외 — 전기국 납부 금액)</label>
         <input type="number" id="ov-elec-total" placeholder="예: 115,500" oninput="calcOverviewElec()">
       </div>
       <div id="ov-elec-result"></div>
@@ -1053,47 +1053,63 @@ function saveWaterMeterVal(tenantId, val) {
   save();
 }
 
-// ⚡ 공용전기세: 1·5층 제외, 2·3층 고정 38500, 4층 나머지
+// ⚡ 공용전기세: 1·5층 제외, 2·3층 고정 38500(공급가35000), 4층 나머지 공급가
 function calcOverviewElec() {
   const totalInput = Number(document.getElementById('ov-elec-total')?.value) || 0;
   const el = document.getElementById('ov-elec-result');
   if (!el) return;
   if (!totalInput) { el.innerHTML = ''; return; }
 
-  const fixed2 = 38500; // VAT 포함 고정
-  const fixed3 = 38500;
-  const fixedSum = fixed2 + fixed3;
-  const remain4 = totalInput - fixedSum;
+  // 입력값 = 공급가 (건물주가 전기국에 내는 금액)
+  const supply2 = 35000; // 2층 공급가
+  const supply3 = 35000; // 3층 공급가
+  const fixedSupplySum = supply2 + supply3;
+  const remain4Supply = totalInput - fixedSupplySum; // 4층 공급가 = 나머지
 
-  let html = `<div style="margin-top:10px;font-size:13px;">`;
+  let html = `<div style="margin-top:10px;font-size:13px;">
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">
+      입력 공급가 ${fmtN(totalInput)}원 → 총 청구 ${fmtN(withVat(totalInput))}원 (VAT 포함)
+    </div>`;
 
   tenants.forEach(t => {
     const unit = t.unit || '';
-    const isFloor1 = unit.includes('1') && !unit.includes('10');
-    const isFloor2 = unit.includes('2');
-    const isFloor3 = unit.includes('3');
-    const isFloor4 = unit.includes('4');
-    const isFloor5 = unit.includes('5');
+    const isFloor1 = unit.includes('1') && !unit.includes('10') && !unit.includes('12') && !unit.includes('13') && !unit.includes('14') && !unit.includes('15');
+    const isFloor2 = unit.includes('2') && !unit.includes('20');
+    const isFloor3 = unit.includes('3') && !unit.includes('30');
+    const isFloor4 = unit.includes('4') && !unit.includes('40');
+    const isFloor5 = unit.includes('5') && !unit.includes('50');
 
-    let amt = 0, tag = '', color = 'var(--text3)';
+    let supplyAmt = 0, tag = '', color = 'var(--text3)';
 
-    if (isFloor2) { amt = 35000; tag = '고정 38,500원 (공급가 35,000)'; color = 'var(--gold)'; }
-    else if (isFloor3) { amt = 35000; tag = '고정 38,500원 (공급가 35,000)'; color = 'var(--gold)'; }
-    else if (isFloor4 && remain4 > 0) {
-      const supply = Math.round(remain4 / 1.1);
-      amt = supply; tag = `나머지 ${fmtN(remain4)}원 (공급가 ${fmtN(supply)})`;
+    if (isFloor2) {
+      supplyAmt = supply2;
+      tag = `공급가 ${fmtN(supply2)}원 + VAT ${fmtN(vatOf(supply2))}원 = 청구 ${fmtN(withVat(supply2))}원`;
+      color = 'var(--gold)';
+    } else if (isFloor3) {
+      supplyAmt = supply3;
+      tag = `공급가 ${fmtN(supply3)}원 + VAT ${fmtN(vatOf(supply3))}원 = 청구 ${fmtN(withVat(supply3))}원`;
+      color = 'var(--gold)';
+    } else if (isFloor4 && remain4Supply > 0) {
+      supplyAmt = remain4Supply;
+      tag = `공급가 ${fmtN(remain4Supply)}원 + VAT ${fmtN(vatOf(remain4Supply))}원 = 청구 ${fmtN(withVat(remain4Supply))}원`;
       color = 'var(--green)';
     } else {
       tag = '미부과 (배분 제외)';
     }
 
     html += `<div class="ov-row">
-      <span class="ov-label">${t.biz||t.name} (${t.unit})</span>
-      <span style="font-size:12px;color:${color};font-family:'DM Mono',monospace;">${tag}</span>
+      <span class="ov-label">${t.biz||t.name} <span style="font-size:10px;color:var(--text3);">(${t.unit})</span></span>
+      <span style="font-size:11px;color:${color};font-family:'DM Mono',monospace;text-align:right;">${tag}</span>
     </div>`;
 
-    applyToMk(t.id, 'electricity', amt);
+    applyToMk(t.id, 'electricity', supplyAmt);
   });
+
+  // 합계 검증
+  const totalCharge = withVat(supply2) + withVat(supply3) + (remain4Supply > 0 ? withVat(remain4Supply) : 0);
+  html += `<div style="margin-top:10px;padding:8px 10px;background:var(--goldbg);border-radius:8px;font-size:12px;color:var(--gold);">
+    ✅ 세입자 총 청구 합계: ${fmtN(totalCharge)}원 (공급가 ${fmtN(totalInput)}원 + VAT ${fmtN(vatOf(totalInput))}원)
+  </div>`;
 
   html += `</div>`;
   el.innerHTML = html;
