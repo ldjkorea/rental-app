@@ -57,8 +57,9 @@ body{
   position:sticky; top:0; z-index:80;
   background:#0a0a0a;
   border-bottom:1px solid var(--border2);
-  padding:14px 20px 12px;
-  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 24px 22px;
+  display:flex; flex-direction:column; align-items:stretch;
+  gap:0;
 }
 .logo{
   font-family:'Playfair Display',serif;
@@ -95,7 +96,7 @@ body{
 /* ───────────────────────────────────────
    콘텐츠
 ─────────────────────────────────────── */
-.content{padding:18px 18px 0;}
+.content{padding:36px 20px 0;}
 .section{display:none;}
 .section.active{display:block;}
 
@@ -384,9 +385,7 @@ body::before{
 @media(min-width:640px){
   .content{max-width:640px;margin:0 auto;}
   .header{max-width:640px;margin:0 auto;left:0;right:0;position:sticky;}
-  .pill-nav{bottom:28px;}
-  /* pill 더 넓게 */
-  .pill-item{padding:8px 24px;}
+  .pill-item{padding:6px 24px;}
 }
 </style>
 
@@ -394,15 +393,21 @@ body::before{
 
 <!-- ── 헤더 ── -->
 <div class="header" id="main-header" style="display:none;">
-  <div class="logo">임대<span>管理</span></div>
-  <!-- 월 네비게이터 -->
-  <div class="month-nav">
-    <button class="mnav-btn" onclick="changeMonth(-1)">‹</button>
-    <span class="mnav-label" id="currentMonth" onclick="openMonthPicker()">2026년 3월</span>
-    <button class="mnav-btn" onclick="changeMonth(1)">›</button>
+  <!-- 1행: 로고 + 날짜 -->
+  <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+    <div class="logo">Property <span>Management</span></div>
+    <div style="text-align:right;">
+      <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--gold);letter-spacing:.5px;" id="live-date-main"></div>
+    </div>
   </div>
-  <!-- 자동저장 상태 -->
-  <div class="sync-dot" id="sync-dot">● 대기</div>
+  <!-- 2행: 월 네비게이터 -->
+  <div style="display:flex;justify-content:center;width:100%;margin-top:24px;">
+    <div class="month-nav">
+      <button class="mnav-btn" onclick="changeMonth(-1)">‹</button>
+      <span class="mnav-label" id="currentMonth" onclick="openMonthPicker()">2026년 3월</span>
+      <button class="mnav-btn" onclick="changeMonth(1)">›</button>
+    </div>
+  </div>
 </div>
 
 <!-- ── 콘텐츠 ── -->
@@ -636,43 +641,33 @@ body::before{
 <!-- ══════════════════════════════
      홈 배경 장식 (pill 중앙일 때만 보임)
 ══════════════════════════════ -->
-<div id="home-deco" style="position:fixed;inset:0;z-index:1;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+<div id="home-deco" style="position:fixed;inset:0;z-index:199;pointer-events:none;">
 
-  <!-- 코너 장식선 4개 -->
-  <div style="position:absolute;top:22px;left:22px;width:36px;height:36px;border-top:1.5px solid rgba(201,168,76,0.35);border-left:1.5px solid rgba(201,168,76,0.35);border-radius:4px 0 0 0;"></div>
-  <div style="position:absolute;top:22px;right:22px;width:36px;height:36px;border-top:1.5px solid rgba(201,168,76,0.35);border-right:1.5px solid rgba(201,168,76,0.35);border-radius:0 4px 0 0;"></div>
-  <div style="position:absolute;bottom:22px;left:22px;width:36px;height:36px;border-bottom:1.5px solid rgba(201,168,76,0.35);border-left:1.5px solid rgba(201,168,76,0.35);border-radius:0 0 0 4px;"></div>
-  <div style="position:absolute;bottom:22px;right:22px;width:36px;height:36px;border-bottom:1.5px solid rgba(201,168,76,0.35);border-right:1.5px solid rgba(201,168,76,0.35);border-radius:0 0 4px 0;"></div>
+  <!-- pill 바로 위에 오는 텍스트 블록 -->
+  <div style="position:absolute;left:50%;bottom:calc(50% + 68px);transform:translateX(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:0;width:100%;text-align:center;">
 
-  <!-- 중앙 로고 블록 (pill 위에 배치) -->
-  <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-    display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:-60px;">
-
-    <!-- 상단 장식선 -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-      <div style="width:28px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.4));"></div>
-      <div style="width:4px;height:4px;background:rgba(201,168,76,0.5);transform:rotate(45deg);"></div>
-      <div style="width:28px;height:1px;background:linear-gradient(270deg,transparent,rgba(201,168,76,0.4));"></div>
+    <!-- PROPERTY -->
+    <div style="font-family:'Playfair Display',serif;font-size:clamp(28px,8vw,52px);font-weight:700;
+      color:rgba(232,201,122,0.85);letter-spacing:clamp(4px,2vw,12px);line-height:1;
+      white-space:nowrap;">
+      PROPERTY
     </div>
 
-    <!-- 로고 텍스트 -->
-    <div style="font-family:'Playfair Display',serif;font-size:32px;font-weight:700;
-      color:rgba(201,168,76,0.55);letter-spacing:3px;line-height:1;white-space:nowrap;">
-      임대管理
+    <!-- 구분선 + 다이아 -->
+    <div style="display:flex;align-items:center;gap:10px;margin:12px 0;">
+      <div style="width:48px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.5));"></div>
+      <div style="width:5px;height:5px;background:rgba(201,168,76,0.7);transform:rotate(45deg);flex-shrink:0;"></div>
+      <div style="width:48px;height:1px;background:linear-gradient(270deg,transparent,rgba(201,168,76,0.5));"></div>
     </div>
 
-    <!-- 서브텍스트 -->
-    <div style="font-size:9px;color:rgba(201,168,76,0.3);letter-spacing:5px;
-      text-transform:uppercase;font-family:'Noto Sans KR',sans-serif;font-weight:300;">
-      PROPERTY MANAGER
+    <!-- MANAGEMENT -->
+    <div style="font-family:'Playfair Display',serif;font-size:clamp(10px,2.5vw,16px);font-weight:400;
+      color:rgba(201,168,76,0.5);letter-spacing:clamp(6px,3vw,16px);line-height:1;
+      white-space:nowrap;">
+      MANAGEMENT
     </div>
 
-    <!-- 하단 장식선 -->
-    <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
-      <div style="width:18px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,0.3));"></div>
-      <div style="width:40px;height:1px;background:rgba(201,168,76,0.25);"></div>
-      <div style="width:18px;height:1px;background:linear-gradient(270deg,transparent,rgba(201,168,76,0.3));"></div>
-    </div>
   </div>
 
 </div>
@@ -824,7 +819,7 @@ body::before{
 /* ════════════════════════════════════════
    전역 상태
 ════════════════════════════════════════ */
-let cY=2026, cM=3; // 현재 선택 월
+let cY=new Date().getFullYear(), cM=new Date().getMonth()+1;
 let tenants     = JSON.parse(localStorage.getItem('tenants')||'[]');
 let bills       = JSON.parse(localStorage.getItem('bills')||'{}');
 let loans       = JSON.parse(localStorage.getItem('loans')||'[]');
@@ -1663,9 +1658,23 @@ function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});});
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
 
+/* 실시간 날짜 표시 */
+const DAYS_EN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function updateLiveDate(){
+  const now=new Date();
+  const yy=String(now.getFullYear()).slice(2);
+  const mo=String(now.getMonth()+1).padStart(2,'0');
+  const d=String(now.getDate()).padStart(2,'0');
+  const day=DAYS_EN[now.getDay()];
+  const main=document.getElementById('live-date-main');
+  if(main)main.textContent=`${yy}/${mo}/${d} (${day})`;
+}
+
 /* Init */
 document.addEventListener('DOMContentLoaded',()=>{
   updateMonthLabel();loadWaterRatioInputs();renderAll();syncUI('saved');
+  updateLiveDate();
+  setInterval(updateLiveDate, 1000);
 });
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 </script>
