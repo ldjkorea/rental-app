@@ -720,9 +720,20 @@ body::before{
     <div class="field"><label>재계약 단위</label><input type="text" id="inp-renew" placeholder="1년단위 재계약"></div>
     <div class="divider"></div>
     <div class="section-label">월 고정 금액</div>
-    <div class="field-row">
-      <div class="field"><label>월세 (원)</label><input type="number" id="inp-rent" placeholder="500000"></div>
-      <div class="field"><label>관리비 (원)</label><input type="number" id="inp-mgmt" placeholder="50000"></div>
+    <div class="field">
+      <label>월세 (원)</label>
+      <input type="number" id="inp-rent" placeholder="500000">
+    </div>
+    <div class="divider"></div>
+    <div class="section-label">📋 관리비 세부 항목 (5월 시행령)</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.6;">
+      정부 방침에 따른 전체 항목 · 운영 상태와 금액을 세입자별로 설정하세요
+    </div>
+    <div id="mgmt-items-wrap"></div>
+    <!-- 합계 -->
+    <div style="padding:11px 14px;background:var(--goldbg);border:1px solid rgba(201,168,76,.25);border-radius:var(--r2);display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+      <span style="font-size:12px;color:var(--text2);">관리비 합계 (VAT 별도)</span>
+      <span id="mgmt-total-preview" style="font-family:'DM Mono',monospace;font-size:15px;color:var(--gold);font-weight:700;">₩0</span>
     </div>
     <div class="field"><label>엘리베이터 운용비 (원, VAT제외)</label><input type="number" id="inp-elevator" placeholder="0 입력 시 미부과"></div>
     <div class="divider"></div>
@@ -837,6 +848,158 @@ let histY=cY, histM=cM;
 let settCalcResult = null;
 
 const SHEET_URL='https://script.google.com/macros/s/AKfycbzZ5g7ljLVaqGSrd-BnkYAouhXjAGpiHhlbdoThlZP45nUGP-a7lvWyrxR-Qr9Cafv9/exec';
+
+/* 관리비 전체 항목 (5월 시행령) */
+const ALL_MGMT_ITEMS=[
+  {key:'m1', cat:'일반관리비',       name:'관리 운영 인건비',        defaultAmt:30000,  type:'fixed',    defaultStatus:'active',   desc:'건물 관리인 직접 운영 및 주 1회 현장 점검, 상시 민원 대응'},
+  {key:'m2', cat:'일반관리비',       name:'사무 소모품비',            defaultAmt:10000,  type:'fixed',    defaultStatus:'active',   desc:'LED 전구 교체, 공용물품, 계약 사무용품, 제설제 등'},
+  {key:'m3', cat:'일반관리비',       name:'세무 행정 용역비',         defaultAmt:130000, type:'fixed',    defaultStatus:'active',   desc:'임대관리 회계 처리 및 전자세금계산서 발행 등'},
+  {key:'m4', cat:'청소비',           name:'청소 용역비',              defaultAmt:60000,  type:'fixed',    defaultStatus:'active',   desc:'주 3회 전문 청소업체 이용 (월·수·금 새벽 청소)'},
+  {key:'m5', cat:'청소비',           name:'건물 환경 관리비',         defaultAmt:10000,  type:'fixed',    defaultStatus:'active',   desc:'공용부 환경 관리 및 청소 물품 구매'},
+  {key:'m6', cat:'수선유지비',       name:'소방안전 관리비',          defaultAmt:10000,  type:'fixed',    defaultStatus:'active',   desc:'소화기, 유도등 등 공용 안전 설비 유지 비용'},
+  {key:'m7', cat:'수선유지비',       name:'긴급 수선 예비비',         defaultAmt:50000,  type:'fixed',    defaultStatus:'active',   desc:'공용부 유지관리 및 긴급 보수 비용'},
+  {key:'m8', cat:'승강기 유지비',    name:'승강기 유지보수비',        defaultAmt:0,      type:'separate', defaultStatus:'active',   desc:'유지보수 계약 기준에 따라 부과'},
+  {key:'m9', cat:'공용 전기료',      name:'공용 전기요금',            defaultAmt:0,      type:'separate', defaultStatus:'active',   desc:'월 1회, 공용부 사용량 기준 분배 청구'},
+  {key:'m10',cat:'공용 수도료',      name:'공용 수도요금',            defaultAmt:0,      type:'separate', defaultStatus:'active',   desc:'2개월 1회, 공용부 사용량 기준 분배 청구'},
+  {key:'m11',cat:'정화조 처리',      name:'오물 처리료',              defaultAmt:0,      type:'separate', defaultStatus:'active',   desc:'연 1~2회 정기 시행 후 실비 분배 청구'},
+  {key:'m12',cat:'소독비',           name:'방역비',                   defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:'추후 변경 시 공지'},
+  {key:'m13',cat:'냉난방비',         name:'냉난방비',                 defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:''},
+  {key:'m14',cat:'수선유지비',       name:'냉난방시설 청소비',        defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:''},
+  {key:'m15',cat:'수선유지비',       name:'보안 방범 관리비',         defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:''},
+  {key:'m16',cat:'위탁관리수수료',   name:'위탁관리 수수료',          defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:''},
+  {key:'m17',cat:'건물 보험료',      name:'공용부 화재 배상책임 보험',defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:''},
+  {key:'m18',cat:'경비비',           name:'경비비',                   defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:'추후 변경 시 협의'},
+  {key:'m19',cat:'공용 가스료',      name:'가스 사용료',              defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:''},
+  {key:'m20',cat:'폐기물 처리',      name:'폐기물 처리료',            defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:'임차인 직접 처리 (관할 지침 따름)'},
+];
+const DEFAULT_MGMT_ITEMS=ALL_MGMT_ITEMS;
+
+function getMgmtItems(t){
+  const base=ALL_MGMT_ITEMS.map(d=>({key:d.key,status:d.defaultStatus,amount:d.defaultAmt}));
+  if(!t||!t.mgmtItems||!t.mgmtItems.length)return base;
+  return ALL_MGMT_ITEMS.map(d=>{
+    const saved=t.mgmtItems.find(x=>x.key===d.key);
+    if(saved&&saved.status!==undefined)return saved;
+    // 구버전 호환 (active 필드)
+    if(saved&&saved.active!==undefined)return{key:d.key,status:saved.active?'active':'inactive',amount:saved.amount};
+    return{key:d.key,status:d.defaultStatus,amount:d.defaultAmt};
+  });
+}
+
+function renderMgmtItemsModal(items){
+  const wrap=document.getElementById('mgmt-items-wrap');
+  if(!wrap)return;
+  const cats=[...new Set(ALL_MGMT_ITEMS.map(d=>d.cat))];
+  let html='';
+  cats.forEach(cat=>{
+    const catItems=ALL_MGMT_ITEMS.filter(d=>d.cat===cat);
+    html+=`<div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin:12px 0 4px;padding-bottom:3px;border-bottom:1px solid var(--border2);">${cat}</div>`;
+    catItems.forEach(d=>{
+      const item=items.find(x=>x.key===d.key)||{status:d.defaultStatus,amount:d.defaultAmt};
+      const s=item.status||d.defaultStatus;
+      const isActive=s==='active';
+      const isInactive=s==='inactive';
+      const isNa=s==='na';
+      const statusColor=isActive?'var(--green)':isInactive?'var(--gold)':'var(--text3)';
+      html+=`<div id="mi-row-${d.key}" style="padding:6px 0;border-bottom:1px solid var(--border);opacity:${isNa?'0.45':'1'};">
+        <div style="display:flex;align-items:flex-start;gap:8px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12px;color:var(--text);font-weight:500;display:flex;align-items:center;gap:5px;">
+              ${d.name}
+              ${d.type==='separate'?`<span style="font-size:9px;color:var(--gold);background:var(--goldbg);padding:1px 5px;border-radius:8px;">별도고지</span>`:''}
+            </div>
+            ${d.desc?`<div style="font-size:10px;color:var(--text3);margin-top:1px;">${d.desc}</div>`:''}
+          </div>
+          <select id="mi-sel-${d.key}" onchange="onMgmtStatusChange('${d.key}',this.value)"
+            style="padding:4px 6px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;
+            color:${statusColor};font-size:10px;font-weight:700;font-family:'Noto Sans KR',sans-serif;
+            flex-shrink:0;cursor:pointer;min-width:72px;">
+            <option value="active"   ${isActive  ?'selected':''}>운영중</option>
+            <option value="inactive" ${isInactive?'selected':''}>미운영중</option>
+            <option value="na"       ${isNa      ?'selected':''}>해당없음</option>
+          </select>
+        </div>
+        ${isActive&&(d.type==='fixed'||d.type==='separate')?`
+        <div style="display:flex;align-items:center;gap:6px;margin-top:5px;">
+          <span style="font-size:10px;color:var(--text3);">금액 (원)</span>
+          <input type="number" id="mi-amt-${d.key}" value="${item.amount||''}" placeholder="${d.defaultAmt||'별도'}"
+            oninput="updateMgmtTotal()"
+            style="flex:1;padding:5px 8px;background:var(--surface3);border:1px solid var(--border2);
+            border-radius:6px;color:var(--text);font-size:12px;font-family:'DM Mono',monospace;text-align:right;">
+        </div>`:`<input type="hidden" id="mi-amt-${d.key}" value="${item.amount||0}">`}
+      </div>`;
+    });
+  });
+  wrap.innerHTML=html;
+  updateMgmtTotal();
+}
+
+function onMgmtStatusChange(key,status){
+  const items=readMgmtItemsFromModal();
+  const it=items.find(x=>x.key===key);
+  if(it)it.status=status;
+  renderMgmtItemsModal(items);
+}
+
+function updateMgmtTotal(){
+  const total=ALL_MGMT_ITEMS.reduce((s,d)=>{
+    const sel=document.getElementById(`mi-sel-${d.key}`);
+    if(!sel||sel.value!=='active')return s;
+    if(d.type!=='fixed'&&d.type!=='separate')return s;
+    return s+(Number(document.getElementById(`mi-amt-${d.key}`)?.value)||0);
+  },0);
+  const el=document.getElementById('mgmt-total-preview');
+  if(el)el.textContent=fmt(total);
+}
+
+function readMgmtItemsFromModal(){
+  return ALL_MGMT_ITEMS.map(d=>({
+    key:d.key,
+    status:document.getElementById(`mi-sel-${d.key}`)?.value||d.defaultStatus,
+    amount:Number(document.getElementById(`mi-amt-${d.key}`)?.value)||0,
+  }));
+}
+
+function calcMgmtTotal(mgmtItems){
+  return (mgmtItems||[]).reduce((s,x)=>{
+    if(x.status!=='active')return s;
+    const def=ALL_MGMT_ITEMS.find(d=>d.key===x.key);
+    if(!def||(def.type!=='fixed'&&def.type!=='separate'))return s;
+    return s+(Number(x.amount)||0);
+  },0);
+}
+
+function buildMgmtBreakdownHtml(t){
+  const items=getMgmtItems(t);
+  const visItems=ALL_MGMT_ITEMS.filter(d=>{
+    const it=items.find(x=>x.key===d.key);
+    return it&&it.status!=='na';
+  });
+  if(!visItems.length)return'';
+  const total=calcMgmtTotal(items);
+  return`<div style="margin-top:6px;padding:8px 10px;background:var(--surface2);border-radius:8px;">
+    ${visItems.map(d=>{
+      const it=items.find(x=>x.key===d.key);
+      const isActive=it.status==='active';
+      const amt=isActive&&it.amount>0?fmtN(it.amount)+'원':(d.type==='separate'?'별도고지':'-');
+      const badge=isActive
+        ?`<span style="font-size:9px;color:var(--green);background:rgba(76,175,125,.12);padding:1px 5px;border-radius:8px;flex-shrink:0;">운영</span>`
+        :`<span style="font-size:9px;color:var(--gold);background:var(--goldbg);padding:1px 5px;border-radius:8px;flex-shrink:0;">미운영</span>`;
+      return`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;opacity:${isActive?1:0.5};">
+        <div style="display:flex;align-items:center;gap:5px;min-width:0;">
+          ${badge}
+          <span style="color:${isActive?'var(--text2)':'var(--text3)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name}</span>
+        </div>
+        <span style="font-family:'DM Mono',monospace;color:${isActive?'var(--text2)':'var(--text3)'};flex-shrink:0;margin-left:6px;">${amt}</span>
+      </div>`;
+    }).join('')}
+    ${total>0?`<div style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px;display:flex;justify-content:space-between;font-size:12px;">
+      <span style="color:var(--text2);font-weight:700;">소계</span>
+      <span style="font-family:'DM Mono',monospace;color:var(--gold);">${fmtN(total)}</span>
+    </div>`:''}
+  </div>`;
+}
+
 const PAY_ITEMS=[
   {key:'pay_mgmt',label:'관리비',short:'관리비'},
   {key:'pay_rent',label:'월세',short:'월세'},
@@ -1229,19 +1392,22 @@ function goSettStep(step){
 function renderTenants(){
   const el=document.getElementById('tenant-list');
   if(!tenants.length){el.innerHTML=`<div class="empty"><div class="empty-icon">👥</div><div style="font-size:13px;">세입자가 없어요</div></div>`;return;}
-  el.innerHTML=tenants.map((t,i)=>`
-    <div class="t-item" style="cursor:default;">
-      <div style="display:flex;gap:4px;flex-shrink:0;">
-        <button onclick="moveTenant(${i},-1)" ${i===0?'disabled':''} style="background:var(--surface2);border:1px solid var(--border);color:${i===0?'var(--text3)':'var(--text2)'};width:26px;height:26px;border-radius:6px;font-size:11px;cursor:pointer;padding:0;">◀</button>
-        <button onclick="moveTenant(${i},1)" ${i===tenants.length-1?'disabled':''} style="background:var(--surface2);border:1px solid var(--border);color:${i===tenants.length-1?'var(--text3)':'var(--text2)'};width:26px;height:26px;border-radius:6px;font-size:11px;cursor:pointer;padding:0;">▶</button>
+  el.innerHTML=tenants.map((t,i)=>{
+    const floor=getFloor(t.unit);
+    const floorLabel=floor>0?`${floor}F`:'?F';
+    return`<div class="t-item" style="cursor:default;">
+      <div style="display:flex;flex-direction:column;gap:3px;flex-shrink:0;">
+        <button onclick="moveTenant(${i},-1)" ${i===0?'disabled':''} style="background:var(--surface2);border:1px solid var(--border);color:${i===0?'var(--text3)':'var(--text2)'};width:26px;height:26px;border-radius:6px;font-size:11px;cursor:pointer;padding:0;">▲</button>
+        <button onclick="moveTenant(${i},1)" ${i===tenants.length-1?'disabled':''} style="background:var(--surface2);border:1px solid var(--border);color:${i===tenants.length-1?'var(--text3)':'var(--text2)'};width:26px;height:26px;border-radius:6px;font-size:11px;cursor:pointer;padding:0;">▼</button>
       </div>
-      <div class="t-avatar">${(t.biz||t.name)[0]}</div>
+      <div class="t-avatar" style="font-size:12px;letter-spacing:-.5px;">${floorLabel}</div>
       <div class="t-info"><div class="t-name">${t.biz||t.name}</div><div class="t-unit">${t.name}·${t.unit}${t.contract?' · '+t.contract:''}</div></div>
       <div style="display:flex;gap:6px;flex-shrink:0;">
         <button onclick="editTenant('${t.id}')" style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:5px 9px;border-radius:7px;font-size:11px;cursor:pointer;">수정</button>
         <button onclick="deleteTenant('${t.id}')" style="background:var(--redbg);border:1px solid rgba(192,57,43,.3);color:var(--red);padding:5px 9px;border-radius:7px;font-size:11px;cursor:pointer;">삭제</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 function moveTenant(i,d){const ni=i+d;if(ni<0||ni>=tenants.length)return;[tenants[i],tenants[ni]]=[tenants[ni],tenants[i]];save();renderAll();}
 function toggleElecFixed(){const t=document.getElementById('inp-elec-type').value;document.getElementById('elec-fixed-wrap').style.display=t==='fixed'?'block':'none';}
@@ -1262,15 +1428,18 @@ function updateRenewPreview(){
 }
 function openAddTenant(){
   editTenantId=null;document.getElementById('modal-tenant-title').textContent='세입자 추가';
-  ['inp-name','inp-biz','inp-unit','inp-contract','inp-contract-first','inp-payday','inp-renew','inp-rent','inp-mgmt','inp-elevator','inp-elec-fixed','inp-pm','inp-pr','inp-pe','inp-pev','inp-pw','inp-wd'].forEach(f=>{const e=document.getElementById(f);if(e)e.value=f==='inp-renew'?'1년단위 재계약':'';});
+  ['inp-name','inp-biz','inp-unit','inp-contract','inp-contract-first','inp-payday','inp-renew','inp-rent','inp-elevator','inp-elec-fixed','inp-pm','inp-pr','inp-pe','inp-pev','inp-pw','inp-wd'].forEach(f=>{const e=document.getElementById(f);if(e)e.value=f==='inp-renew'?'1년단위 재계약':'';});
   document.getElementById('inp-paytype').value='후불납';document.getElementById('inp-elec-type').value='none';document.getElementById('inp-wo').value='';
   document.getElementById('elec-fixed-wrap').style.display='none';document.getElementById('renew-preview-wrap').style.display='none';
-  document.getElementById('elec-preview').textContent='₩0';openModal('modal-tenant');
+  document.getElementById('elec-preview').textContent='₩0';
+  // 관리비 항목 기본값으로 초기화
+  renderMgmtItemsModal(getMgmtItems(null));
+  openModal('modal-tenant');
 }
 function editTenant(id){
   const t=tenants.find(x=>x.id===id);editTenantId=id;
   document.getElementById('modal-tenant-title').textContent='세입자 수정';
-  ['name','biz','unit','contract','contract_first','payday','renew','rent','mgmt','elevator'].forEach(f=>{const e=document.getElementById('inp-'+f.replace('_','-'));if(e)e.value=t[f]||t[f.replace('-','_')]||'';});
+  ['name','biz','unit','contract','contract_first','payday','renew','rent','elevator'].forEach(f=>{const e=document.getElementById('inp-'+f.replace('_','-'));if(e)e.value=t[f]||t[f.replace('-','_')]||'';});
   updateRenewPreview();
   document.getElementById('inp-paytype').value=t.paytype||'후불납';
   document.getElementById('inp-elec-type').value=t.elecType||'none';
@@ -1280,12 +1449,16 @@ function editTenant(id){
   const pm={mgmt:'inp-pm',rent:'inp-pr',elec:'inp-pe',elev:'inp-pev',waste:'inp-pw',water_day:'inp-wd'};
   Object.entries(pm).forEach(([k,id])=>{const e=document.getElementById(id);if(e)e.value=t['period_'+k]||'';});
   document.getElementById('inp-wo').value=t.period_water_odd||'';
+  // 관리비 항목 로드
+  renderMgmtItemsModal(getMgmtItems(t));
   openModal('modal-tenant');
 }
 function saveTenant(){
   const name=document.getElementById('inp-name').value.trim();
   const unit=document.getElementById('inp-unit').value.trim();
   if(!name||!unit){showToast('이름과 호수를 입력해주세요');return;}
+  const mgmtItems=readMgmtItemsFromModal();
+  const mgmtTotal=calcMgmtTotal(mgmtItems);
   const d={name,unit,
     biz:document.getElementById('inp-biz').value.trim(),
     contract:document.getElementById('inp-contract').value.trim(),
@@ -1294,7 +1467,8 @@ function saveTenant(){
     paytype:document.getElementById('inp-paytype').value,
     renew:document.getElementById('inp-renew').value.trim(),
     rent:document.getElementById('inp-rent').value,
-    mgmt:document.getElementById('inp-mgmt').value,
+    mgmt:String(mgmtTotal),
+    mgmtItems,
     elevator:document.getElementById('inp-elevator').value||'0',
     elecType:document.getElementById('inp-elec-type').value,
     elecFixed:document.getElementById('inp-elec-fixed').value,
@@ -1496,7 +1670,10 @@ function buildBillFormHtml(t,year,month){
     <div class="section-label">📋 고정금액</div>
     <div style="background:var(--surface2);border-radius:10px;padding:10px;font-size:13px;">
       <div class="ov-row"><span class="ov-label">월세</span><span class="ov-value">${fmt(withVat(Number(t.rent)||0))} <span style="font-size:10px;color:var(--text3);">VAT포함</span></span></div>
-      <div class="ov-row"><span class="ov-label">관리비</span><span class="ov-value">${fmt(withVat(Number(t.mgmt)||0))} <span style="font-size:10px;color:var(--text3);">VAT포함</span></span></div>
+      <div>
+        <div class="ov-row"><span class="ov-label">관리비</span><span class="ov-value">${fmt(withVat(Number(t.mgmt)||0))} <span style="font-size:10px;color:var(--text3);">VAT포함</span></span></div>
+        ${buildMgmtBreakdownHtml(t)}
+      </div>
       <div class="ov-row"><span class="ov-label">엘리베이터</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:${elevV?'var(--gold)':'var(--text3)'};">${elevV?fmt(withVat(elevV))+' <span style="font-size:10px;color:var(--text3);">VAT포함</span>':'미부과'}</span></div>
     </div>
     <div class="divider"></div>
@@ -1624,7 +1801,19 @@ function previewKakao(){
   const elec=Number(b.electricity)||0,water=Number(b.water)||0,waste=b.wasteNA?0:(Number(b.waste)||0);
   let bLines='';
   if(rent)bLines+=`\n${um}월 월세 : ${fmtN(withVat(rent))}원`;
-  if(mgmt)bLines+=`\n${um}월 관리비 : ${fmtN(withVat(mgmt))}원`;
+  if(mgmt){
+    bLines+=`\n${um}월 관리비 : ${fmtN(withVat(mgmt))}원`;
+    const mitems=getMgmtItems(t).filter(x=>x.status!=='na');
+    if(mitems.length){
+      mitems.forEach(x=>{
+        const def=ALL_MGMT_ITEMS.find(d=>d.key===x.key);
+        if(!def)return;
+        const isActive=x.status==='active';
+        const amtStr=isActive&&x.amount>0?fmtN(x.amount)+'원':(def.type==='separate'?'별도고지':'-');
+        bLines+=`\n   · ${def.name} : ${amtStr}${!isActive?' [미운영]':''}`;
+      });
+    }
+  }
   if(elec)bLines+=`\n${um}월 공용전기세 : ${fmtN(withVat(elec))}원`;
   if(elev)bLines+=`\n${um}월 엘리베이터 운용비 : ${fmtN(withVat(elev))}원`;
   if(water)bLines+=`\n${um}월 수도요금 : ${fmtN(water)}원`;
