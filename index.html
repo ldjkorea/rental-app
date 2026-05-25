@@ -378,6 +378,32 @@ body::before{
 .loan-item:last-child{border-bottom:none;}
 .expense-item{padding:9px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
 .hint-box{font-size:11px;color:var(--text3);padding:9px 12px;background:var(--surface2);border-radius:8px;line-height:1.7;margin-top:8px;}
+
+/* 완납 도장 */
+.stamp-wrap{position:relative;}
+.stamp-overlay{
+  position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%) rotate(-18deg);
+  pointer-events:none;z-index:10;
+  border:4px solid rgba(192,57,43,0.85);
+  border-radius:6px;
+  padding:10px 20px;
+  text-align:center;
+  background:rgba(192,57,43,0.04);
+}
+.stamp-text{
+  font-family:'Playfair Display',serif;
+  font-size:36px;font-weight:700;
+  color:rgba(192,57,43,0.82);
+  letter-spacing:6px;line-height:1;
+  display:block;
+}
+.stamp-date{
+  font-family:'DM Mono',monospace;
+  font-size:11px;color:rgba(192,57,43,0.65);
+  letter-spacing:2px;margin-top:4px;
+  display:block;
+}
 </style>
 
 <!-- PC: 화면 중앙 정렬, 최대 640px -->
@@ -971,32 +997,34 @@ function calcMgmtTotal(mgmtItems){
 
 function buildMgmtBreakdownHtml(t){
   const items=getMgmtItems(t);
-  const visItems=ALL_MGMT_ITEMS.filter(d=>{
-    const it=items.find(x=>x.key===d.key);
-    return it&&it.status!=='na';
-  });
-  if(!visItems.length)return'';
   const total=calcMgmtTotal(items);
+  const rows=ALL_MGMT_ITEMS.map(d=>{
+    const it=items.find(x=>x.key===d.key);
+    const s=it?it.status:d.defaultStatus;
+    const isActive=s==='active';
+    const isInactive=s==='inactive';
+    const isNa=s==='na';
+    const amt=isActive&&it.amount>0?fmtN(it.amount)+'원':'0원';
+    const badge=isActive
+      ?`<span style="font-size:9px;color:var(--green);background:rgba(76,175,125,.12);padding:1px 5px;border-radius:8px;flex-shrink:0;">운영</span>`
+      :isInactive
+        ?`<span style="font-size:9px;color:var(--gold);background:var(--goldbg);padding:1px 5px;border-radius:8px;flex-shrink:0;">미운영</span>`
+        :`<span style="font-size:9px;color:var(--text3);background:var(--surface3);padding:1px 5px;border-radius:8px;flex-shrink:0;">해당없음</span>`;
+    return`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;opacity:${isActive?1:0.45};">
+      <div style="display:flex;align-items:center;gap:5px;min-width:0;flex:1;">
+        ${badge}
+        <span style="color:${isActive?'var(--text2)':'var(--text3)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name}</span>
+        ${d.type==='separate'?`<span style="font-size:9px;color:var(--text3);">(별도)</span>`:''}
+      </div>
+      <span style="font-family:'DM Mono',monospace;color:${isActive&&it.amount>0?'var(--text2)':'var(--text3)'};flex-shrink:0;margin-left:6px;">${amt}</span>
+    </div>`;
+  }).join('');
   return`<div style="margin-top:6px;padding:8px 10px;background:var(--surface2);border-radius:8px;">
-    ${visItems.map(d=>{
-      const it=items.find(x=>x.key===d.key);
-      const isActive=it.status==='active';
-      const amt=isActive&&it.amount>0?fmtN(it.amount)+'원':(d.type==='separate'?'별도고지':'-');
-      const badge=isActive
-        ?`<span style="font-size:9px;color:var(--green);background:rgba(76,175,125,.12);padding:1px 5px;border-radius:8px;flex-shrink:0;">운영</span>`
-        :`<span style="font-size:9px;color:var(--gold);background:var(--goldbg);padding:1px 5px;border-radius:8px;flex-shrink:0;">미운영</span>`;
-      return`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;opacity:${isActive?1:0.5};">
-        <div style="display:flex;align-items:center;gap:5px;min-width:0;">
-          ${badge}
-          <span style="color:${isActive?'var(--text2)':'var(--text3)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name}</span>
-        </div>
-        <span style="font-family:'DM Mono',monospace;color:${isActive?'var(--text2)':'var(--text3)'};flex-shrink:0;margin-left:6px;">${amt}</span>
-      </div>`;
-    }).join('')}
-    ${total>0?`<div style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px;display:flex;justify-content:space-between;font-size:12px;">
+    ${rows}
+    <div style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px;display:flex;justify-content:space-between;font-size:12px;">
       <span style="color:var(--text2);font-weight:700;">소계</span>
       <span style="font-family:'DM Mono',monospace;color:var(--gold);">${fmtN(total)}</span>
-    </div>`:''}
+    </div>
   </div>`;
 }
 
@@ -1085,7 +1113,15 @@ function syncUI(s){
 function changeMonth(d){
   cM+=d;
   if(cM>12){cM=1;cY++;}if(cM<1){cM=12;cY--;}
-  updateMonthLabel();renderAll();
+  // 히스토리 탭 월도 함께 동기화
+  histY=cY; histM=cM;
+  updateMonthLabel();
+  renderAll();
+  // 현재 활성 탭에 따라 콘텐츠 재렌더
+  const isHist=document.getElementById('section-history')?.classList.contains('active');
+  const isSett=document.getElementById('section-settlement')?.classList.contains('active');
+  if(isHist && selTenantId){ renderHistChips(); renderHistContent(); }
+  if(isSett){ renderSettTab(); }
 }
 function updateMonthLabel(){
   const lbl=`${cY}년 ${cM}월`;
@@ -1637,16 +1673,47 @@ function renderHistContent(){
     water?`<div class="ov-row"><span class="ov-label">수도요금</span><span class="ov-value">${fmt(water)}</span></div>`:'',
     waste?`<div class="ov-row"><span class="ov-label">오물처리비</span><span class="ov-value">${fmt(waste)}</span></div>`:'',
   ].join('');
-  con.innerHTML=`<div class="card">
+  const isStamped = b.stamped;
+  const stampHtml = isStamped ? `
+    <div class="stamp-overlay">
+      <span class="stamp-text">완납</span>
+      <span class="stamp-date">${b.stampedDate||''}</span>
+    </div>` : '';
+
+  con.innerHTML=`<div class="card stamp-wrap">
+    ${stampHtml}
     <div class="card-header"><div><div class="card-title">${t.biz||t.name} · ${histY}년 ${histM}월</div><div class="card-sub">납부확인 ${pCnt}/${PAY_ITEMS.length}건</div></div>
       <div style="font-family:'DM Mono',monospace;font-size:17px;font-weight:700;color:var(--gold);">${fmt(total)}</div></div>
     <div>${rows}</div>
     ${pCnt>0?`<div style="margin-top:8px;font-size:11px;color:var(--green);line-height:1.8;">${PAY_ITEMS.filter(item=>paid[item.key]?.date&&!paid[item.key]?.na).map(item=>`✅ ${item.label} ${paid[item.key].date}`).join('<br>')}</div>`:''}
-    <button onclick="editThisMonth()" style="margin-top:10px;background:var(--goldbg2);border:1px solid var(--gold);color:var(--gold);padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;width:100%;font-family:'Noto Sans KR',sans-serif;">✏️ 수정하기</button>
-    <button onclick="previewKakao()" style="margin-top:7px;background:linear-gradient(135deg,#2d6a4f,#1b4332);border:none;color:var(--gold3);padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;width:100%;font-family:'Noto Sans KR',sans-serif;">💬 카카오 메시지</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+      <button onclick="stampBill()" style="background:${isStamped?'var(--redbg)':'var(--surface2)'};border:2px solid ${isStamped?'rgba(192,57,43,.5)':'var(--border2)'};color:${isStamped?'var(--red)':'var(--text2)'};padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">
+        ${isStamped?'🔴 완납 취소':'🔴 완납 도장'}
+      </button>
+      <button onclick="editThisMonth()" style="background:var(--goldbg2);border:1px solid var(--gold);color:var(--gold);padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">✏️ 수정</button>
+    </div>
+    <button onclick="previewKakao()" style="margin-top:8px;background:linear-gradient(135deg,#2d6a4f,#1b4332);border:none;color:var(--gold3);padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;width:100%;font-family:'Noto Sans KR',sans-serif;">💬 카카오 메시지</button>
   </div>`;
 }
 function editThisMonth(){const t=tenants.find(x=>x.id===selTenantId);if(!t)return;document.getElementById('hist-content').innerHTML=buildBillFormHtml(t,histY,histM);}
+
+/* 완납 도장 */
+function stampBill(){
+  const key=`${histY}-${String(histM).padStart(2,'0')}`;
+  if(!bills[key])bills[key]={};
+  if(!bills[key][selTenantId])bills[key][selTenantId]={};
+  const b=bills[key][selTenantId];
+  b.stamped=!b.stamped;
+  if(b.stamped){
+    const now=new Date();
+    b.stampedDate=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+  } else {
+    delete b.stampedDate;
+  }
+  save();
+  renderHistContent();
+  if(b.stamped) showToast('완납 도장이 찍혔어요 🔴');
+}
 
 function buildBillFormHtml(t,year,month){
   const uy=year||cY,um=month||cM;
@@ -1667,7 +1734,7 @@ function buildBillFormHtml(t,year,month){
       <button onclick="saveWaterMeter()" style="background:var(--gold);border:none;color:#0a0a0a;padding:9px 13px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">기록</button>
     </div>
     <div class="divider"></div>
-    <div class="section-label">📋 고정금액</div>
+    <div class="section-label">📋 고정 관리비 목록</div>
     <div style="background:var(--surface2);border-radius:10px;padding:10px;font-size:13px;">
       <div class="ov-row"><span class="ov-label">월세</span><span class="ov-value">${fmt(withVat(Number(t.rent)||0))} <span style="font-size:10px;color:var(--text3);">VAT포함</span></span></div>
       <div>
@@ -1677,15 +1744,35 @@ function buildBillFormHtml(t,year,month){
       <div class="ov-row"><span class="ov-label">엘리베이터</span><span style="font-family:'DM Mono',monospace;font-size:13px;color:${elevV?'var(--gold)':'var(--text3)'};">${elevV?fmt(withVat(elevV))+' <span style="font-size:10px;color:var(--text3);">VAT포함</span>':'미부과'}</span></div>
     </div>
     <div class="divider"></div>
-    <div class="section-label">📊 변동금액</div>
-    <div class="field"><label>공용전기세 (공급가, VAT제외)</label><input type="number" id="bill-electricity" placeholder="0" value="${Number(b.electricity)||''}" oninput="updateBillTotal()"><div class="vat-hint">부가세: <span id="vat-electricity">${fmt(vatOf(Number(b.electricity)||0))}</span></div></div>
-    <div class="field"><label>수도요금 (원)</label><input type="number" id="bill-water" placeholder="0" value="${Number(b.water)||''}" oninput="updateBillTotal()"></div>
+    <div class="section-label">📊 변동금액 (별도 고지)</div>
+
+    <!-- 공용전기세 -->
     <div class="field">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;"><label style="margin:0;">오물처리비</label>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+        <label style="margin:0;">공용전기세 (공급가, VAT제외)</label>
+        <button onclick="toggleFieldNA('electricity')" style="font-size:10px;padding:3px 9px;border-radius:20px;border:1.5px solid ${b.electricityNA?'var(--red)':'var(--border)'};background:${b.electricityNA?'var(--redbg)':'transparent'};color:${b.electricityNA?'var(--red)':'var(--text3)'};cursor:pointer;">${b.electricityNA?'✕ 미부과':'미부과'}</button>
+      </div>
+      ${b.electricityNA?`<div style="font-size:11px;color:var(--red);">이번 달 미부과</div>`:`<div><input type="number" id="bill-electricity" placeholder="0" value="${Number(b.electricity)||''}" oninput="updateBillTotal()"><div class="vat-hint">부가세: <span id="vat-electricity">${fmt(vatOf(Number(b.electricity)||0))}</span></div></div>`}
+    </div>
+
+    <!-- 수도요금 -->
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+        <label style="margin:0;">수도요금 (원)</label>
+        <button onclick="toggleFieldNA('water')" style="font-size:10px;padding:3px 9px;border-radius:20px;border:1.5px solid ${b.waterNA?'var(--red)':'var(--border)'};background:${b.waterNA?'var(--redbg)':'transparent'};color:${b.waterNA?'var(--red)':'var(--text3)'};cursor:pointer;">${b.waterNA?'✕ 미부과':'미부과'}</button>
+      </div>
+      ${b.waterNA?`<div style="font-size:11px;color:var(--red);">이번 달 미부과</div>`:`<input type="number" id="bill-water" placeholder="0" value="${Number(b.water)||''}" oninput="updateBillTotal()">`}
+    </div>
+
+    <!-- 오물처리비 -->
+    <div class="field">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;">
+        <label style="margin:0;">오물처리비</label>
         <button onclick="toggleWasteNA()" style="font-size:10px;padding:3px 9px;border-radius:20px;border:1.5px solid ${wasteNA?'var(--red)':'var(--border)'};background:${wasteNA?'var(--redbg)':'transparent'};color:${wasteNA?'var(--red)':'var(--text3)'};cursor:pointer;">${wasteNA?'✕ 미부과':'미부과'}</button>
       </div>
       ${wasteNA?`<div style="font-size:11px;color:var(--red);">이번 달 미부과</div>`:`<input type="number" id="bill-waste" placeholder="0" value="${Number(b.waste)||''}" oninput="updateBillTotal()">`}
     </div>
+
     <div class="bill-total-box"><div class="bill-total-label">이번 달 총 청구액 (VAT포함)</div><div class="bill-total-amount" id="bill-total-display">${fmt(calcFromInput(t,b))}</div></div>
     <button class="btn btn-primary" onclick="saveBill()">💾 저장</button>
     <button class="btn btn-green" onclick="previewKakao()">💬 카카오톡 메시지</button>
@@ -1754,33 +1841,20 @@ function calcWaterPeriod(t,y,m){
   const d=Number(t.period_water_day);let sm=m-3;if(sm<=0)sm+=12;let em=m-1;if(em<=0)em+=12;
   return{period:`${String(sm).padStart(2,'0')}/${String(d).padStart(2,'0')}~${String(em).padStart(2,'0')}/${String(d-1).padStart(2,'0')}`,active:true};
 }
-function renderPayChecks(t,b,y,m){
-  const uy=y||cY,um=m||cM,paid=b.paid||{};
-  const ap={pay_mgmt:calcPeriod(t.period_mgmt,uy,um),pay_rent:calcPeriod(t.period_rent,uy,um),pay_elec:calcPeriod(t.period_elec,uy,um),pay_elev:calcPeriod(t.period_elev,uy,um),pay_waste:calcPeriod(t.period_waste,uy,um)};
-  const wc=calcWaterPeriod(t,uy,um);
-  return PAY_ITEMS.map(item=>{
-    const p=paid[item.key]||{};const isW=item.key==='pay_water';
-    const wOff=isW&&!wc.active&&!p.date;const autoPer=isW?wc.period:(ap[item.key]||'');
-    const period=p.period!==undefined&&p.period!==''?p.period:autoPer;const date=p.date||'';const isNA=p.na===true;
-    return`<div style="padding:9px 0;border-bottom:1px solid var(--border);${(wOff||isNA)?'opacity:.4;':''}">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span style="font-size:13px;font-weight:700;color:var(--text);">${item.label}</span>
-        <button onclick="toggleNA('${item.key}')" style="font-size:10px;padding:3px 9px;border-radius:20px;border:1.5px solid ${isNA?'var(--red)':'var(--border)'};background:${isNA?'var(--redbg)':'transparent'};color:${isNA?'var(--red)':'var(--text3)'};cursor:pointer;">${isNA?'✕ 미부과':'미부과'}</button>
-      </div>
-      ${isNA?`<div style="font-size:11px;color:var(--red);">미부과</div>`:`
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
-        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px;">사용기간</div>
-          <input type="text" placeholder="${autoPer||'기간 입력'}" value="${period}" onchange="updatePay('${item.key}','period',this.value)" style="width:100%;padding:7px 9px;background:var(--surface2);border:1.5px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;font-family:'DM Mono',monospace;"></div>
-        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px;">입금확인일</div>
-          <input type="text" placeholder="02/24" value="${date}" onchange="updatePay('${item.key}','date',this.value)" style="width:100%;padding:7px 9px;background:var(--surface2);border:1.5px solid ${date?'var(--green)':'var(--border)'};border-radius:7px;color:${date?'var(--green)':'var(--text)'};font-size:12px;font-family:'DM Mono',monospace;"></div>
-      </div>`}
-    </div>`;
-  }).join('');
+/* 전기세·수도요금 미부과 토글 */
+function toggleFieldNA(field){
+  const key=activeMk();if(!bills[key])bills[key]={};if(!bills[key][selTenantId])bills[key][selTenantId]={};
+  const b=bills[key][selTenantId];
+  b[field+'NA']=!b[field+'NA'];
+  if(b[field+'NA'])b[field]=0;
+  save();
+  const t=tenants.find(x=>x.id===selTenantId);
+  document.getElementById('hist-content').innerHTML=buildBillFormHtml(t,histY,histM);
 }
 function toggleNA(itemKey){
   const key=activeMk();if(!bills[key])bills[key]={};if(!bills[key][selTenantId])bills[key][selTenantId]={};
   const b=bills[key][selTenantId];if(!b.paid)b.paid={};if(!b.paid[itemKey])b.paid[itemKey]={};
-  b.paid[itemKey].na=!b.paid[itemKey].na;if(b.paid[itemKey].na){b.paid[itemKey].date='';b.paid[itemKey].period='';}
+  b.paid[itemKey].na=!b.paid[itemKey].na;if(b.paid[itemKey].na){b.paid[itemKey].date='';}
   save();const t=tenants.find(x=>x.id===selTenantId);const el=document.getElementById('pay-check-wrap');
   if(el)el.innerHTML=renderPayChecks(t,b,activeY(),activeM());
 }
@@ -1788,6 +1862,38 @@ function updatePay(itemKey,field,value){
   const key=activeMk();if(!bills[key])bills[key]={};if(!bills[key][selTenantId])bills[key][selTenantId]={};
   const b=bills[key][selTenantId];if(!b.paid)b.paid={};if(!b.paid[itemKey])b.paid[itemKey]={};
   b.paid[itemKey][field]=value;save();
+}
+/* 납부확인 - 사용기간 자동 + 날짜만 입력 */
+function renderPayChecks(t,b,y,m){
+  const uy=y||cY,um=m||cM,paid=b.paid||{};
+  const ap={
+    pay_mgmt:calcPeriod(t.period_mgmt,uy,um),pay_rent:calcPeriod(t.period_rent,uy,um),
+    pay_elec:calcPeriod(t.period_elec,uy,um),pay_elev:calcPeriod(t.period_elev,uy,um),
+    pay_waste:calcPeriod(t.period_waste,uy,um),
+  };
+  const wc=calcWaterPeriod(t,uy,um);
+  return PAY_ITEMS.map(item=>{
+    const p=paid[item.key]||{};const isW=item.key==='pay_water';
+    const autoPer=isW?wc.period:(ap[item.key]||'');
+    const date=p.date||'';const isNA=p.na===true;
+    const confirmed=!!date&&!isNA;
+    return`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);${isNA?'opacity:.4;':''}">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);">${item.label}</div>
+        ${autoPer?`<div style="font-size:10px;color:var(--text3);margin-top:2px;font-family:'DM Mono',monospace;">${autoPer}</div>`:''}
+      </div>
+      ${isNA
+        ?`<button onclick="toggleNA('${item.key}')" style="font-size:10px;padding:4px 10px;border-radius:20px;border:1.5px solid var(--red);background:var(--redbg);color:var(--red);cursor:pointer;flex-shrink:0;">미부과</button>`
+        :`<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <input type="text" placeholder="MM/DD" value="${date}"
+            onchange="updatePay('${item.key}','date',this.value);this.style.borderColor=this.value?'var(--green)':'var(--border)';this.style.color=this.value?'var(--green)':'var(--text)';"
+            style="width:72px;padding:7px 9px;background:var(--surface2);
+            border:1.5px solid ${confirmed?'var(--green)':'var(--border)'};border-radius:7px;
+            color:${confirmed?'var(--green)':'var(--text)'};font-size:12px;font-family:'DM Mono',monospace;text-align:center;">
+          <button onclick="toggleNA('${item.key}')" style="font-size:10px;padding:4px 8px;border-radius:20px;border:1.5px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;white-space:nowrap;">미부과</button>
+        </div>`}
+    </div>`;
+  }).join('');
 }
 
 /* 카카오 메시지 */
