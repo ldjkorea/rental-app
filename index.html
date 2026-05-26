@@ -9,8 +9,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PM">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230a0a0a'/%3E%3Crect x='3' y='3' width='506' height='506' rx='110' fill='none' stroke='%23c9a84c' stroke-width='8' stroke-opacity='0.55'/%3E%3Ctext x='256' y='306' font-family='Georgia,serif' font-size='228' font-weight='700' fill='%23c9a84c' text-anchor='middle' letter-spacing='-10'%3EPM%3C/text%3E%3Cline x1='148' y1='342' x2='364' y2='342' stroke='%23c9a84c' stroke-width='2.5' stroke-opacity='0.38'/%3E%3C/svg%3E">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230a0a0a'/%3E%3Crect x='3' y='3' width='506' height='506' rx='110' fill='none' stroke='%23c9a84c' stroke-width='8' stroke-opacity='0.55'/%3E%3Ctext x='256' y='306' font-family='Georgia,serif' font-size='228' font-weight='700' fill='%23c9a84c' text-anchor='middle' letter-spacing='-10'%3EPM%3C/text%3E%3Cline x1='148' y1='342' x2='364' y2='342' stroke='%23c9a84c' stroke-width='2.5' stroke-opacity='0.38'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <style>
 /* ───────────────────────────────────────
@@ -1841,4 +1841,23 @@ function saveBill(){
   const prev=bills[key][selTenantId]||{};
   bills[key][selTenantId]={
     electricity:    document.getElementById('bill-electricity')?.value||0,
-    water:          document.getElementById('bi
+    water:          document.getElementById('bill-water')?.value||0,
+    waste:          document.getElementById('bill-waste')?.value||0,
+    wasteNA:        prev.wasteNA||false,
+    electricityNA:  prev.electricityNA||false,
+    waterNA:        prev.waterNA||false,
+    waterMeter:     document.getElementById('bill-water-meter')?.value||0,
+    ...(prev.paid      ? {paid:prev.paid}           : {}),
+    ...(prev.stamped   ? {stamped:prev.stamped,stampedDate:prev.stampedDate} : {}),
+  };
+  save();renderHome();if(selTenantId)renderHistContent();showToast('저장됐어요 ✓');
+}
+function toggleWasteNA(){
+  const key=activeMk();if(!bills[key])bills[key]={};if(!bills[key][selTenantId])bills[key][selTenantId]={};
+  const b=bills[key][selTenantId];b.wasteNA=!b.wasteNA;if(b.wasteNA)b.waste=0;save();
+  const t=tenants.find(x=>x.id===selTenantId);document.getElementById('hist-content').innerHTML=buildBillFormHtml(t,histY,histM);
+}
+function deleteWaterMeter(mkStr){
+  const t=tenants.find(x=>x.id===selTenantId);if(!t||!confirm('삭제할까요?'))return;
+  t.waterHistory=(t.waterHistory||[]).filter(w=>w.mk!==mkStr);save();
+  document.getElementById(
