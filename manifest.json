@@ -1,11 +1,11 @@
 {
-  "name": "임대관리",
-  "short_name": "임대관리",
-  "description": "세입자 임대료 고지서 관리 앱",
+  "name": "Property Management",
+  "short_name": "PM",
+  "description": "임대료 고지서 및 세입자 관리 앱",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0f0f13",
-  "theme_color": "#6c63ff",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
   "orientation": "portrait",
   "icons": [
     {
