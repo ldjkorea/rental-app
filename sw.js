@@ -1,4 +1,4 @@
-const CACHE_NAME = 'rental-v1';
+const CACHE_NAME = 'rental-v2';
 const ASSETS = ['./index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
