@@ -1152,8 +1152,28 @@ function renderHome(){
   let aHtml='';
   tenants.forEach(t=>{
     const r=calcRenewPeriod(t.contract);if(!r)return;
-    if(today>r.end)aHtml+=`<div class="status-bar warn">🚨 <strong>${t.biz||t.name}</strong> 갱신기간 초과!</div>`;
-    else if(today>=r.start)aHtml+=`<div class="status-bar pending">⚠️ <strong>${t.biz||t.name}</strong> 재계약 기간 (${r.str})</div>`;
+    const contractEndStr=t.contract?.split('~')[1]?.trim();
+    const done=renewalDone[t.id]; // 'agreed'=협의완료, 계약종료일문자열=갱신완료
+
+    if(done===contractEndStr){
+      // 갱신완료 → 흰색
+      aHtml+=`<div class="status-bar" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);color:var(--text);">✅ <strong>${t.biz||t.name}</strong> 계약갱신 완료!</div>`;
+    } else if(done==='agreed_'+contractEndStr){
+      // 협의완료 → 초록색
+      aHtml+=`<div class="status-bar done">🤝 <strong>${t.biz||t.name}</strong> 계약갱신필요 (협의완료)</div>`;
+    } else if(today>=r.warnStart){
+      // 만료 1달 전 이후 → 빨간색 "계약갱신기간 경과!"
+      aHtml+=`<div class="status-bar warn">🚨 <strong>${t.biz||t.name}</strong> 계약갱신기간 경과! (${contractEndStr} 만료)
+        <button onclick="agreeRenewal('${t.id}')" style="margin-left:8px;font-size:10px;padding:2px 8px;border-radius:12px;border:1px solid rgba(192,57,43,.5);background:var(--redbg);color:var(--red);cursor:pointer;">협의완료</button>
+        <button onclick="completeRenewal('${t.id}')" style="margin-left:4px;font-size:10px;padding:2px 8px;border-radius:12px;border:1px solid rgba(76,175,125,.4);background:rgba(76,175,125,.1);color:var(--green);cursor:pointer;">갱신완료</button>
+      </div>`;
+    } else if(today>=r.start){
+      // 만료 6개월 전 ~ 1달 전 → 노란색 협상 가능 기간
+      aHtml+=`<div class="status-bar pending">⚠️ <strong>${t.biz||t.name}</strong> 재계약 협상 기간 (${r.str})
+        <button onclick="agreeRenewal('${t.id}')" style="margin-left:8px;font-size:10px;padding:2px 8px;border-radius:12px;border:1px solid rgba(201,168,76,.4);background:var(--goldbg);color:var(--gold);cursor:pointer;">협의완료</button>
+        <button onclick="completeRenewal('${t.id}')" style="margin-left:4px;font-size:10px;padding:2px 8px;border-radius:12px;border:1px solid rgba(76,175,125,.4);background:rgba(76,175,125,.1);color:var(--green);cursor:pointer;">갱신완료</button>
+      </div>`;
+    }
   });
   const aEl=document.getElementById('home-alerts');if(aEl)aEl.innerHTML=aHtml;
 
@@ -1412,10 +1432,10 @@ function updateElecPreview(){const v=Number(document.getElementById('inp-elec-fi
 function calcRenewPeriod(s){
   if(!s)return null;const p=s.split('~').map(x=>x.trim());if(p.length<2)return null;
   const ed=new Date(p[1].replace(/\//g,'-'));if(isNaN(ed))return null;
-  const st=new Date(ed);st.setMonth(st.getMonth()-6);
-  const en=new Date(ed);en.setMonth(en.getMonth()-1);
+  const st=new Date(ed);st.setMonth(st.getMonth()-6);   // 협상 시작: 만료 6개월 전
+  const ws=new Date(ed);ws.setMonth(ws.getMonth()-1);   // 빨간색 시작: 만료 1개월 전
   const fd=d=>`${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-  return{start:st,end:en,str:`${fd(st)} ~ ${fd(en)}`};
+  return{start:st,warnStart:ws,contractEnd:ed,str:`${fd(st)} ~ ${fd(ws)}`};
 }
 function updateRenewPreview(){
   const v=document.getElementById('inp-contract')?.value;
@@ -1564,17 +1584,44 @@ function renderLoanInterestSummary(){
 function renderRenewalChecklist(){
   const card=document.getElementById('renewal-card');const el=document.getElementById('renewal-list');if(!card||!el)return;
   const today=new Date();
-  const items=tenants.filter(t=>{const r=calcRenewPeriod(t.contract);if(!r)return false;if(today<r.start||today>r.end)return false;const ce=t.contract?.split('~')[1]?.trim();return renewalDone[t.id]!==ce;});
+  const items=tenants.filter(t=>{
+    const r=calcRenewPeriod(t.contract);if(!r)return false;
+    const ce=t.contract?.split('~')[1]?.trim();
+    // 갱신완료는 제외, 협의완료+경과+협상기간은 표시
+    if(renewalDone[t.id]===ce)return false;
+    return today>=r.start||today>=r.warnStart;
+  });
   if(!items.length){card.style.display='none';return;}
   card.style.display='block';
-  el.innerHTML=items.map(t=>{const r=calcRenewPeriod(t.contract);
+  el.innerHTML=items.map(t=>{
+    const r=calcRenewPeriod(t.contract);
+    const ce=t.contract?.split('~')[1]?.trim();
+    const done=renewalDone[t.id];
+    const isAgreed=done==='agreed_'+ce;
+    const isWarn=today>=r.warnStart;
     return`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
-      <div><div style="font-size:13px;font-weight:700;color:var(--text);">${t.biz||t.name}</div>
-      <div style="font-size:11px;color:var(--text2);margin-top:2px;">갱신 가능: ${r.str}</div></div>
-      <button onclick="completeRenewal('${t.id}')" style="background:linear-gradient(135deg,#c9a84c,#a8862e);border:none;color:#0a0a0a;padding:6px 12px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;white-space:nowrap;">✓ 완료</button>
-    </div>`;}).join('');
+      <div>
+        <div style="font-size:13px;font-weight:700;color:${isWarn?'var(--red)':isAgreed?'var(--green)':'var(--gold)'};">${t.biz||t.name}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px;">${isAgreed?'협의완료 · 갱신대기':isWarn?'🚨 갱신기간 경과 ('+ce+' 만료)':'협상가능: '+r.str}</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        ${!isAgreed?`<button onclick="agreeRenewal('${t.id}')" style="background:var(--goldbg2);border:1px solid var(--gold);color:var(--gold);padding:5px 10px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">협의완료</button>`:''}
+        <button onclick="completeRenewal('${t.id}')" style="background:rgba(76,175,125,.15);border:1px solid rgba(76,175,125,.4);color:var(--green);padding:5px 10px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">갱신완료</button>
+      </div>
+    </div>`;
+  }).join('');
 }
-function completeRenewal(id){const t=tenants.find(x=>x.id===id);if(!t)return;renewalDone[id]=t.contract?.split('~')[1]?.trim();save();renderRenewalChecklist();showToast('갱신 완료 ✓');}
+function agreeRenewal(id){
+  const t=tenants.find(x=>x.id===id);if(!t)return;
+  const ce=t.contract?.split('~')[1]?.trim();
+  renewalDone[id]='agreed_'+ce;
+  save();renderHome();renderRenewalChecklist();showToast('협의완료 처리됐어요 🤝');
+}
+function completeRenewal(id){
+  const t=tenants.find(x=>x.id===id);if(!t)return;
+  renewalDone[id]=t.contract?.split('~')[1]?.trim();
+  save();renderHome();renderRenewalChecklist();showToast('계약갱신 완료 ✅');
+}
 
 /* ════════════════════════════════════════
    지출
