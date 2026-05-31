@@ -664,9 +664,9 @@ body::before{
       <input type="number" id="inp-rent" placeholder="500000">
     </div>
     <div class="divider"></div>
-    <div class="section-label">📋 관리비 세부 항목 (5월 시행령)</div>
+    <div class="section-label">📋 관리비 세부 항목 (2026.05.12 공개 기준)</div>
     <div style="font-size:11px;color:var(--text2);margin-bottom:8px;line-height:1.6;">
-      정부 방침에 따른 전체 항목 · 운영 상태와 금액을 세입자별로 설정하세요
+      각 항목을 <strong style="color:var(--green);">운영중</strong>(고정금액) / <strong style="color:var(--gold2);">실비정산</strong>(사용량 기준) / <strong style="color:var(--text2);">미운영</strong> 중 선택하세요
     </div>
     <div id="mgmt-items-wrap"></div>
     <!-- 합계 -->
@@ -788,28 +788,27 @@ let settCalcResult = null;
 
 const SHEET_URL='https://script.google.com/macros/s/AKfycbzZ5g7ljLVaqGSrd-BnkYAouhXjAGpiHhlbdoThlZP45nUGP-a7lvWyrxR-Qr9Cafv9/exec';
 
-/* 관리비 전체 항목 (5월 시행령) */
+/* 관리비 항목 (2026.05.12 관리비 공개 기준) */
 const ALL_MGMT_ITEMS=[
-  {key:'m1', cat:'일반관리비',       name:'관리 운영 인건비',        defaultAmt:30000,  type:'fixed',    defaultStatus:'active',   desc:'건물 관리인 직접 운영 및 주 1회 현장 점검, 상시 민원 대응'},
-  {key:'m2', cat:'일반관리비',       name:'사무 소모품비',            defaultAmt:10000,  type:'fixed',    defaultStatus:'active',   desc:'LED 전구 교체, 공용물품, 계약 사무용품, 제설제 등'},
-  {key:'m3', cat:'일반관리비',       name:'세무 행정 용역비',         defaultAmt:130000, type:'fixed',    defaultStatus:'active',   desc:'임대관리 회계 처리 및 전자세금계산서 발행 등'},
-  {key:'m4', cat:'청소비',           name:'청소 용역비',              defaultAmt:60000,  type:'fixed',    defaultStatus:'active',   desc:'주 3회 전문 청소업체 이용 (월·수·금 새벽 청소)'},
-  {key:'m5', cat:'청소비',           name:'건물 환경 관리비',         defaultAmt:10000,  type:'fixed',    defaultStatus:'active',   desc:'공용부 환경 관리 및 청소 물품 구매'},
-  {key:'m6', cat:'수선유지비',       name:'소방안전 관리비',          defaultAmt:10000,  type:'fixed',    defaultStatus:'active',   desc:'소화기, 유도등 등 공용 안전 설비 유지 비용'},
-  {key:'m7', cat:'수선유지비',       name:'긴급 수선 예비비',         defaultAmt:50000,  type:'fixed',    defaultStatus:'active',   desc:'공용부 유지관리 및 긴급 보수 비용'},
-  {key:'m8', cat:'승강기 유지비',    name:'승강기 유지보수비',        defaultAmt:0,      type:'separate', defaultStatus:'active',   desc:'유지보수 계약 기준에 따라 부과'},
-  {key:'m9', cat:'공용 전기료',      name:'공용 전기요금',            defaultAmt:0,      type:'separate', defaultStatus:'active',   desc:'월 1회, 공용부 사용량 기준 분배 청구'},
-  {key:'m10',cat:'공용 수도료',      name:'공용 수도요금',            defaultAmt:0,      type:'separate', defaultStatus:'active',   desc:'2개월 1회, 공용부 사용량 기준 분배 청구'},
-  {key:'m11',cat:'정화조 처리',      name:'오물 처리료',              defaultAmt:0,      type:'separate', defaultStatus:'active',   desc:'연 1~2회 정기 시행 후 실비 분배 청구'},
-  {key:'m12',cat:'소독비',           name:'방역비',                   defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:'추후 변경 시 공지'},
-  {key:'m13',cat:'냉난방비',         name:'냉난방비',                 defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:''},
-  {key:'m14',cat:'수선유지비',       name:'냉난방시설 청소비',        defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:''},
-  {key:'m15',cat:'수선유지비',       name:'보안 방범 관리비',         defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:''},
-  {key:'m16',cat:'위탁관리수수료',   name:'위탁관리 수수료',          defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:''},
-  {key:'m17',cat:'건물 보험료',      name:'공용부 화재 배상책임 보험',defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:''},
-  {key:'m18',cat:'경비비',           name:'경비비',                   defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:'추후 변경 시 협의'},
-  {key:'m19',cat:'공용 가스료',      name:'가스 사용료',              defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:''},
-  {key:'m20',cat:'폐기물 처리',      name:'폐기물 처리료',            defaultAmt:0,      type:'na',       defaultStatus:'na',       desc:'임차인 직접 처리 (관할 지침 따름)'},
+  {key:'m1', no:'1-1', cat:'일반관리비',  name:'건물 관리 운영비',        defaultAmt:40000,  type:'fixed',  defaultStatus:'active', desc:''},
+  {key:'m2', no:'1-2', cat:'일반관리비',  name:'세무 행정 관리비',        defaultAmt:130000, type:'fixed',  defaultStatus:'active', desc:''},
+  {key:'m3', no:'2-1', cat:'청소비',      name:'청소 용역비',             defaultAmt:60000,  type:'fixed',  defaultStatus:'active', desc:''},
+  {key:'m4', no:'2-2', cat:'청소비',      name:'건물 환경 관리비',        defaultAmt:10000,  type:'fixed',  defaultStatus:'active', desc:''},
+  {key:'m5', no:'3',   cat:'경비비',      name:'경비비',                  defaultAmt:0,      type:'na',     defaultStatus:'na',     desc:''},
+  {key:'m6', no:'4',   cat:'소독비',      name:'소독비',                  defaultAmt:0,      type:'na',     defaultStatus:'na',     desc:''},
+  {key:'m7', no:'5',   cat:'승강기 유지비',name:'승강기 유지비',           defaultAmt:0,      type:'actual', defaultStatus:'actual', desc:''},
+  {key:'m8', no:'6',   cat:'냉난방',      name:'냉난방비 및 급탕비',      defaultAmt:0,      type:'na',     defaultStatus:'na',     desc:''},
+  {key:'m9', no:'7-1', cat:'수선유지비',  name:'소방 안전 관리비',        defaultAmt:10000,  type:'fixed',  defaultStatus:'active', desc:''},
+  {key:'m10',no:'7-2', cat:'수선유지비',  name:'시설 유지 관리비',        defaultAmt:50000,  type:'fixed',  defaultStatus:'active', desc:''},
+  {key:'m11',no:'7-3', cat:'수선유지비',  name:'보안 방범 관리비',        defaultAmt:0,      type:'na',     defaultStatus:'na',     desc:''},
+  {key:'m12',no:'7-4', cat:'수선유지비',  name:'냉방 시설 청소비',        defaultAmt:0,      type:'na',     defaultStatus:'na',     desc:''},
+  {key:'m13',no:'8',   cat:'위탁관리수수료',name:'위탁관리 수수료',         defaultAmt:0,      type:'na',     defaultStatus:'na',     desc:''},
+  {key:'m14',no:'9',   cat:'전기료',      name:'전기료',                  defaultAmt:0,      type:'actual', defaultStatus:'actual', desc:''},
+  {key:'m15',no:'10',  cat:'수도료',      name:'수도료',                  defaultAmt:0,      type:'actual', defaultStatus:'actual', desc:''},
+  {key:'m16',no:'11',  cat:'가스사용료',  name:'가스 사용료',             defaultAmt:0,      type:'na',     defaultStatus:'na',     desc:''},
+  {key:'m17',no:'12',  cat:'정화조',      name:'정화조 오물처리 수수료',  defaultAmt:0,      type:'actual', defaultStatus:'actual', desc:''},
+  {key:'m18',no:'13',  cat:'폐기물',      name:'폐기물 처리 수수료',      defaultAmt:0,      type:'na',     defaultStatus:'na',     desc:''},
+  {key:'m19',no:'14',  cat:'건물보험료',  name:'건물 보험료',             defaultAmt:0,      type:'na',     defaultStatus:'na',     desc:''},
 ];
 const DEFAULT_MGMT_ITEMS=ALL_MGMT_ITEMS;
 
@@ -832,38 +831,41 @@ function renderMgmtItemsModal(items){
   let html='';
   cats.forEach(cat=>{
     const catItems=ALL_MGMT_ITEMS.filter(d=>d.cat===cat);
-    html+=`<div style="font-size:10px;font-weight:700;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin:12px 0 4px;padding-bottom:3px;border-bottom:1px solid var(--border2);">${cat}</div>`;
+    html+=`<div style="font-size:10px;font-weight:700;color:var(--text2);letter-spacing:1px;margin:12px 0 4px;padding-bottom:3px;border-bottom:1px solid var(--border2);">${cat}</div>`;
     catItems.forEach(d=>{
       const item=items.find(x=>x.key===d.key)||{status:d.defaultStatus,amount:d.defaultAmt};
       const s=item.status||d.defaultStatus;
       const isActive=s==='active';
-      const isInactive=s==='inactive';
+      const isActual=s==='actual';
       const isNa=s==='na';
-      const statusColor=isActive?'var(--green)':isInactive?'var(--gold)':'var(--text3)';
-      html+=`<div id="mi-row-${d.key}" style="padding:6px 0;border-bottom:1px solid var(--border);opacity:${isNa?'0.45':'1'};">
+      const statusColor=isActive?'var(--green)':isActual?'var(--gold2)':'var(--text2)';
+      // 금액 입력은 '운영중'일 때만 (실비정산·미운영은 입력 없음)
+      const showAmount=isActive;
+      html+=`<div id="mi-row-${d.key}" style="padding:6px 0;border-bottom:1px solid var(--border);opacity:${isNa?'0.5':'1'};">
         <div style="display:flex;align-items:flex-start;gap:8px;">
           <div style="flex:1;min-width:0;">
             <div style="font-size:12px;color:var(--text);font-weight:500;display:flex;align-items:center;gap:5px;">
-              ${d.name}
-              ${d.type==='separate'?`<span style="font-size:10px;color:var(--gold2);background:var(--goldbg2);padding:2px 6px;border-radius:8px;">별도고지</span>`:''}
+              <span style="font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;flex-shrink:0;">${d.no}</span>
+              <span>${d.name}</span>
+              ${isActual?`<span style="font-size:10px;color:var(--gold2);background:var(--goldbg2);padding:2px 6px;border-radius:8px;flex-shrink:0;">실비</span>`:''}
             </div>
-            ${d.desc?`<div style="font-size:10px;color:var(--text2);margin-top:1px;">${d.desc}</div>`:''}
+            ${d.desc?`<div style="font-size:10px;color:var(--text2);margin-top:1px;padding-left:18px;">${d.desc}</div>`:''}
           </div>
           <select id="mi-sel-${d.key}" onchange="onMgmtStatusChange('${d.key}',this.value)"
-            style="padding:4px 6px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;
+            style="padding:5px 7px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;
             color:${statusColor};font-size:10px;font-weight:700;font-family:'Noto Sans KR',sans-serif;
-            flex-shrink:0;cursor:pointer;min-width:72px;">
-            <option value="active"   ${isActive  ?'selected':''}>운영중</option>
-            <option value="inactive" ${isInactive?'selected':''}>미운영중</option>
-            <option value="na"       ${isNa      ?'selected':''}>해당없음</option>
+            flex-shrink:0;cursor:pointer;min-width:80px;">
+            <option value="active" ${isActive?'selected':''}>운영중</option>
+            <option value="actual" ${isActual?'selected':''}>실비정산</option>
+            <option value="na"     ${isNa    ?'selected':''}>미운영</option>
           </select>
         </div>
-        ${isActive&&(d.type==='fixed'||d.type==='separate')?`
-        <div style="display:flex;align-items:center;gap:6px;margin-top:5px;">
-          <span style="font-size:10px;color:var(--text2);">금액 (원)</span>
-          <input type="number" id="mi-amt-${d.key}" value="${item.amount||''}" placeholder="${d.defaultAmt||'별도'}"
+        ${showAmount?`
+        <div style="display:flex;align-items:center;gap:6px;margin-top:5px;padding-left:18px;">
+          <span style="font-size:10px;color:var(--text2);">금액 (원/월)</span>
+          <input type="number" id="mi-amt-${d.key}" value="${item.amount||''}" placeholder="${d.defaultAmt||0}"
             oninput="updateMgmtTotal()"
-            style="flex:1;padding:5px 8px;background:var(--surface3);border:1px solid var(--border2);
+            style="flex:1;padding:6px 8px;background:var(--surface3);border:1px solid var(--border2);
             border-radius:6px;color:var(--text);font-size:12px;font-family:'DM Mono',monospace;text-align:right;">
         </div>`:`<input type="hidden" id="mi-amt-${d.key}" value="${item.amount||0}">`}
       </div>`;
@@ -881,10 +883,10 @@ function onMgmtStatusChange(key,status){
 }
 
 function updateMgmtTotal(){
+  // '운영중'(고정금액) 항목만 합산. 실비정산·미운영 제외
   const total=ALL_MGMT_ITEMS.reduce((s,d)=>{
     const sel=document.getElementById(`mi-sel-${d.key}`);
     if(!sel||sel.value!=='active')return s;
-    if(d.type!=='fixed'&&d.type!=='separate')return s;
     return s+(Number(document.getElementById(`mi-amt-${d.key}`)?.value)||0);
   },0);
   const el=document.getElementById('mgmt-total-preview');
@@ -900,10 +902,9 @@ function readMgmtItemsFromModal(){
 }
 
 function calcMgmtTotal(mgmtItems){
+  // 고정 관리비 = '운영중' 항목 합계만 (실비정산은 변동금액에서 별도 청구)
   return (mgmtItems||[]).reduce((s,x)=>{
     if(x.status!=='active')return s;
-    const def=ALL_MGMT_ITEMS.find(d=>d.key===x.key);
-    if(!def||(def.type!=='fixed'&&def.type!=='separate'))return s;
     return s+(Number(x.amount)||0);
   },0);
 }
@@ -915,29 +916,32 @@ function buildMgmtBreakdownHtml(t){
     const it=items.find(x=>x.key===d.key);
     const s=it?it.status:d.defaultStatus;
     const isActive=s==='active';
-    const isInactive=s==='inactive';
+    const isActual=s==='actual';
     const isNa=s==='na';
-    const amt=isActive&&it.amount>0?fmtN(it.amount)+'원':'0원';
+    const amt=isActive?(it.amount>0?fmtN(it.amount)+'원':'0원'):isActual?'실비':'0원';
     const badge=isActive
-      ?`<span style="font-size:10px;color:var(--green);background:rgba(76,175,125,.16);padding:2px 6px;border-radius:8px;flex-shrink:0;">운영</span>`
-      :isInactive
-        ?`<span style="font-size:10px;color:var(--gold2);background:var(--goldbg2);padding:2px 6px;border-radius:8px;flex-shrink:0;">미운영</span>`
-        :`<span style="font-size:10px;color:var(--text2);background:var(--surface3);padding:2px 6px;border-radius:8px;flex-shrink:0;">해당없음</span>`;
-    return`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;opacity:${isActive?1:0.45};">
+      ?`<span style="font-size:10px;color:var(--green);background:rgba(76,175,125,.16);padding:2px 6px;border-radius:8px;flex-shrink:0;">운영중</span>`
+      :isActual
+        ?`<span style="font-size:10px;color:var(--gold2);background:var(--goldbg2);padding:2px 6px;border-radius:8px;flex-shrink:0;">실비정산</span>`
+        :`<span style="font-size:10px;color:var(--text2);background:var(--surface3);padding:2px 6px;border-radius:8px;flex-shrink:0;">미운영</span>`;
+    const dim=isNa;
+    return`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;padding:3px 0;opacity:${dim?0.5:1};">
       <div style="display:flex;align-items:center;gap:5px;min-width:0;flex:1;">
+        <span style="font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;flex-shrink:0;">${d.no}</span>
         ${badge}
-        <span style="color:${isActive?'var(--text2)':'var(--text3)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name}</span>
-        ${d.type==='separate'?`<span style="font-size:10px;color:var(--text2);">(별도)</span>`:''}
+        <span style="color:${isActive||isActual?'var(--text2)':'var(--text3)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name}</span>
       </div>
-      <span style="font-family:'DM Mono',monospace;color:${isActive&&it.amount>0?'var(--text2)':'var(--text3)'};flex-shrink:0;margin-left:6px;">${amt}</span>
+      <span style="font-family:'DM Mono',monospace;color:${isActive&&it.amount>0?'var(--text)':isActual?'var(--gold2)':'var(--text3)'};flex-shrink:0;margin-left:6px;">${amt}</span>
     </div>`;
   }).join('');
   return`<div style="margin-top:6px;padding:8px 10px;background:var(--surface2);border-radius:8px;">
     ${rows}
     <div style="border-top:1px solid var(--border);margin-top:5px;padding-top:5px;display:flex;justify-content:space-between;font-size:12px;">
-      <span style="color:var(--text2);font-weight:700;">소계</span>
+      <span style="color:var(--text2);font-weight:700;">고정 관리비 소계</span>
       <span style="font-family:'DM Mono',monospace;color:var(--gold);">${fmtN(total)}</span>
     </div>
+    <div style="font-size:10px;color:var(--text2);margin-top:4px;line-height:1.5;">※ 실비정산 항목(전기·수도·승강기 등)은 변동금액에서 별도 청구됩니다</div>
+    <div style="font-size:10px;color:var(--text2);margin-top:6px;line-height:1.6;padding-top:6px;border-top:1px solid var(--border);">※ 미운영 항목은 현재 관리비에 포함되어 있지 않으며 비용을 부과하지 않습니다. 향후 건물 운영 여건, 법령 변경 또는 공용시설 운영 필요에 따라 해당 항목이 신설·운영될 수 있으며, 이 경우 관련 법령 및 임대차계약에 따라 사전에 안내 후 적용될 수 있습니다.</div>
   </div>`;
 }
 
@@ -1614,7 +1618,7 @@ function renderHistContent(){
   const paid=b.paid||{};const pCnt=PAY_ITEMS.filter(item=>paid[item.key]?.date&&!paid[item.key]?.na).length;
   const rows=[
     rent?`<div class="ov-row"><span class="ov-label">월세</span><span class="ov-value">${fmt(withVat(rent))}</span></div>`:'',
-    mgmt?`<div class="ov-row"><span class="ov-label">관리비</span><span class="ov-value">${fmt(withVat(mgmt))}</span></div>`:'',
+    mgmt?`<div class="ov-row"><span class="ov-label">관리비</span><span class="ov-value">${fmt(withVat(mgmt))}</span></div>${buildMgmtBreakdownHtml(t)}`:'',
     elevV?`<div class="ov-row"><span class="ov-label">엘리베이터</span><span class="ov-value">${fmt(withVat(elevV))}</span></div>`:'',
     elec?`<div class="ov-row"><span class="ov-label">공용전기세</span><span class="ov-value">${fmt(withVat(elec))}</span></div>`:'',
     water?`<div class="ov-row"><span class="ov-label">수도요금</span><span class="ov-value">${fmt(water)}</span></div>`:'',
@@ -1887,9 +1891,8 @@ function previewKakao(){
       mitems.forEach(x=>{
         const def=ALL_MGMT_ITEMS.find(d=>d.key===x.key);
         if(!def)return;
-        const isActive=x.status==='active';
-        const amtStr=isActive&&x.amount>0?fmtN(x.amount)+'원':(def.type==='separate'?'별도고지':'-');
-        bLines+=`\n   · ${def.name} : ${amtStr}${!isActive?' [미운영]':''}`;
+        const amtStr=x.status==='active'?(x.amount>0?fmtN(x.amount)+'원':'0원'):'실비정산';
+        bLines+=`\n   · ${def.name} : ${amtStr}`;
       });
     }
   }
@@ -1907,7 +1910,8 @@ function previewKakao(){
   if(!pks.has('pay_water')&&water)unpaid+=water;if(!pks.has('pay_waste')&&waste)unpaid+=waste;
   const uLine=unpaid>0?`\n미입금 총액 : ${fmtN(unpaid)}원 입금 부탁드립니다~`:`\n전액 입금 확인되었습니다. 감사합니다! 😊`;
   const rp=calcRenewPeriod(t.contract);
-  const msg=`안녕하세요, [${t.biz||t.name}/${t.name}] 사장님.\n${uy}년도 ${mm}월 (${mm}/${lastDay}) 세금계산서 발급하였습니다.\n기타 내용 전달드립니다. 확인후 입금해주세요~\n-------------------------\n최초 계약기간 : ${t.contract_first||''}\n현재 계약기간 : ${t.contract||''}\n계약서 갱신 가능 기간 : ${rp?rp.str:''}\n월납입 기준일 : ${t.payday||''} (${t.renew||''} / ${t.paytype||''})\n-------------------------\n※ 재계약 안내\n* 매 년 계약 종료 6개월 전 ~ 1개월 전 관리인이 직접 방문합니다.\n* 재계약서 작성 및 서명 후 임대인/임차인 각 1부씩 보관합니다.\n* 임차인 본인 또는 대리인, 관리인의 간이 서명으로도 계약 효력이 인정됩니다.${wLines?'\n-------------------------'+wLines:''}\n-------------------------${bLines}\n-------------------------${pLines}\n-------------------------${uLine}\n-------------------------`;
+  const naNotice='\n※ 미운영 항목은 현재 관리비에 포함되어 있지 않으며 비용을 부과하지 않습니다. 향후 건물 운영 여건, 법령 변경 또는 공용시설 운영 필요에 따라 해당 항목이 신설·운영될 수 있으며, 이 경우 관련 법령 및 임대차계약에 따라 사전에 안내 후 적용될 수 있습니다.';
+  const msg=`안녕하세요, [${t.biz||t.name}/${t.name}] 사장님.\n${uy}년도 ${mm}월 (${mm}/${lastDay}) 세금계산서 발급하였습니다.\n기타 내용 전달드립니다. 확인후 입금해주세요~\n-------------------------\n최초 계약기간 : ${t.contract_first||''}\n현재 계약기간 : ${t.contract||''}\n계약서 갱신 가능 기간 : ${rp?rp.str:''}\n월납입 기준일 : ${t.payday||''} (${t.renew||''} / ${t.paytype||''})\n-------------------------\n※ 재계약 안내\n* 매 년 계약 종료 6개월 전 ~ 1개월 전 관리인이 직접 방문합니다.\n* 재계약서 작성 및 서명 후 임대인/임차인 각 1부씩 보관합니다.\n* 임차인 본인 또는 대리인, 관리인의 간이 서명으로도 계약 효력이 인정됩니다.${wLines?'\n-------------------------'+wLines:''}\n-------------------------${bLines}\n${naNotice}\n-------------------------${pLines}\n-------------------------${uLine}\n-------------------------`;
   document.getElementById('kakao-msg-wrap').innerHTML=`<div class="kakao-box" id="kakao-text">${msg.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
   openModal('modal-receipt');
 }
