@@ -1887,15 +1887,15 @@ function previewKakao(){
   if(rent)bLines+=`\n${um}월 월세 : ${fmtN(withVat(rent))}원`;
   if(mgmt){
     bLines+=`\n${um}월 관리비 : ${fmtN(withVat(mgmt))}원`;
-    const mitems=getMgmtItems(t).filter(x=>x.status!=='na');
-    if(mitems.length){
-      mitems.forEach(x=>{
-        const def=ALL_MGMT_ITEMS.find(d=>d.key===x.key);
-        if(!def)return;
-        const amtStr=x.status==='active'?(x.amount>0?fmtN(x.amount)+'원':'0원'):'실비정산';
-        bLines+=`\n   · ${def.name} : ${amtStr}`;
-      });
-    }
+    // 전체 항목을 번호 순서대로 출력 (미운영 포함)
+    ALL_MGMT_ITEMS.forEach(def=>{
+      const x=getMgmtItems(t).find(i=>i.key===def.key)||{status:def.defaultStatus,amount:def.defaultAmt};
+      let amtStr;
+      if(x.status==='active') amtStr=x.amount>0?fmtN(x.amount)+'원':'0원';
+      else if(x.status==='actual') amtStr='실비정산';
+      else amtStr='미운영';
+      bLines+=`\n   ${def.no}. ${def.name} : ${amtStr}`;
+    });
   }
   if(elec)bLines+=`\n${um}월 공용전기세 : ${fmtN(withVat(elec))}원`;
   if(elev)bLines+=`\n${um}월 엘리베이터 운용비 : ${fmtN(withVat(elev))}원`;
