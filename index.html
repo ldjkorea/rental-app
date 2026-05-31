@@ -674,7 +674,7 @@ body::before{
       <span style="font-size:12px;color:var(--text2);">관리비 합계 (VAT 별도)</span>
       <span id="mgmt-total-preview" style="font-family:'DM Mono',monospace;font-size:15px;color:var(--gold);font-weight:700;">₩0</span>
     </div>
-    <div class="field"><label>엘리베이터 운용비 (원, VAT제외)</label><input type="number" id="inp-elevator" placeholder="0 입력 시 미부과"></div>
+    <div class="field"><label>엘리베이터 운용비 (원, VAT제외)</label><input type="number" id="inp-elevator" placeholder="0 입력 시 미부과"><div style="font-size:10px;color:var(--text2);margin-top:4px;">※ 1층 세입자는 입력값과 무관하게 자동으로 제외됩니다</div></div>
     <div class="divider"></div>
     <div class="section-label">공용전기세 배분</div>
     <div class="field"><label>배분 방식</label><select id="inp-elec-type" onchange="toggleElecFixed()"><option value="none">해당없음</option><option value="fixed">고정금액</option><option value="remain">나머지 자동</option></select></div>
@@ -1115,12 +1115,13 @@ function toggleSensitive(){
    홈 렌더링
 ════════════════════════════════════════ */
 function calcSaved(t,b){
+  const elevV=getFloor(t.unit)===1?0:(Number(t.elevator)||0); // 1층은 엘베 제외
   return withVat(Number(b.rent??t.rent)||0)
        +withVat(Number(b.mgmt??t.mgmt)||0)
        +(b.electricityNA?0:withVat(Number(b.electricity)||0))
        +(b.waterNA?0:Number(b.water)||0)
        +(b.wasteNA?0:Number(b.waste)||0)
-       +withVat(Number(t.elevator)||0);
+       +withVat(elevV);
 }
 function calcInterest(){return loans.reduce((s,l)=>s+Math.round(Number(l.principal)*(Number(l.rate)/100)/12),0);}
 
@@ -1610,7 +1611,7 @@ function renderHistContent(){
   const b=(bills[key]||{})[t.id];
   selTenantId=t.id;
   if(!b){con.innerHTML=buildBillFormHtml(t,histY,histM);return;}
-  const rent=Number(t.rent)||0,mgmt=Number(t.mgmt)||0,elevV=Number(t.elevator)||0;
+  const rent=Number(t.rent)||0,mgmt=Number(t.mgmt)||0,elevV=getFloor(t.unit)===1?0:(Number(t.elevator)||0);
   const elec=b.electricityNA?0:(Number(b.electricity)||0);
   const water=b.waterNA?0:(Number(b.water)||0);
   const waste=b.wasteNA?0:(Number(b.waste)||0);
@@ -1675,7 +1676,7 @@ function buildBillFormHtml(t,year,month){
   const awh=t.waterHistory||[];
   if(awh.length>=2){const us=[];for(let i=1;i<awh.length;i++){const diff=awh[i].val-awh[i-1].val;const[py,pm]=awh[i-1].mk.split('-').map(Number);const[cy,cm]=awh[i].mk.split('-').map(Number);const md=(cy-py)*12+(cm-pm);if(md>0&&diff>=0)us.push(diff/md*2);}if(us.length)avg2m=Math.round(us.reduce((s,v)=>s+v,0)/us.length*10)/10;}
   const wHist=wh.length?wh.map((w,i)=>`<div class="water-hist-item"><span>${w.date} · <strong>${fmtN(w.val)}</strong></span><div style="display:flex;align-items:center;gap:6px;">${i>0?`<span style="color:var(--green);font-weight:700;">+${fmtN(w.val-wh[i-1].val)} 톤</span>`:'<span style="color:var(--text3);">기준</span>'}<button onclick="deleteWaterMeter('${w.mk}')" style="background:var(--redbg);border:1px solid rgba(192,57,43,.3);color:var(--red);padding:2px 7px;border-radius:5px;font-size:10px;cursor:pointer;">삭제</button></div></div>`).join(''):`<div style="font-size:12px;color:var(--text3);padding:4px 0;">이력 없음</div>`;
-  const wasteNA=b.wasteNA===true;const elevV=Number(t.elevator)||0;
+  const wasteNA=b.wasteNA===true;const elevV=getFloor(t.unit)===1?0:(Number(t.elevator)||0);
   return`<div class="card">
     <div class="card-header"><div><div class="card-title">${t.biz||t.name} · ${t.unit}</div><div class="card-sub">${uy}년 ${um}월 고지서</div></div></div>
     <div class="section-label">💧 수도계량기 이력</div>
@@ -1737,7 +1738,7 @@ function buildBillFormHtml(t,year,month){
 }
 function calcFromInput(t,b){
   const rent=withVat(Number(t.rent)||0),mgmt=withVat(Number(t.mgmt)||0);
-  const elev=Number(t.elevator)||0?withVat(Number(t.elevator)):0;
+  const elev=(getFloor(t.unit)!==1&&Number(t.elevator)>0)?withVat(Number(t.elevator)):0;
   const waste=b.wasteNA?0:(Number(document.getElementById('bill-waste')?.value??b.waste)||0);
   const elec=b.electricityNA?0:withVat(Number(document.getElementById('bill-electricity')?.value??b.electricity)||0);
   const water=b.waterNA?0:(Number(document.getElementById('bill-water')?.value??b.water)||0);
@@ -1878,7 +1879,7 @@ function previewKakao(){
   const b=(bills[key]||{})[t.id]||{};const mm=String(um).padStart(2,'0');const lastDay=new Date(uy,um,0).getDate();
   const wh=(t.waterHistory||[]).slice(-4);
   const wLines=wh.length?wh.map(w=>`\n${w.date} 수도계량기 : ${fmtN(w.val)}`).join(''):'';
-  const rent=Number(t.rent)||0,mgmt=Number(t.mgmt)||0,elev=Number(t.elevator)||0;
+  const rent=Number(t.rent)||0,mgmt=Number(t.mgmt)||0,elev=getFloor(t.unit)===1?0:(Number(t.elevator)||0);
   const elec=b.electricityNA?0:(Number(b.electricity)||0);
   const water=b.waterNA?0:(Number(b.water)||0);
   const waste=b.wasteNA?0:(Number(b.waste)||0);
