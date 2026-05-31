@@ -388,26 +388,45 @@ body::before{
 /* 완납 도장 */
 .stamp-wrap{position:relative;}
 .stamp-overlay{
-  position:absolute;top:50%;left:50%;
-  transform:translate(-50%,-50%) rotate(-18deg);
+  position:absolute;top:48%;
+  transform:translateY(-50%) rotate(-15deg);
   pointer-events:none;z-index:10;
-  border:4px solid rgba(192,57,43,0.85);
+  border:3.5px solid;
   border-radius:6px;
-  padding:10px 20px;
+  padding:8px 14px;
   text-align:center;
-  background:rgba(192,57,43,0.04);
 }
+/* 월세 완납 - 빨강, 왼쪽 */
+.stamp-rent{
+  left:14%;
+  border-color:rgba(192,57,43,0.85);
+  background:rgba(192,57,43,0.05);
+}
+.stamp-rent .stamp-text{color:rgba(192,57,43,0.85);}
+.stamp-rent .stamp-date{color:rgba(192,57,43,0.62);}
+/* 관리비 완납 - 파랑, 오른쪽 */
+.stamp-mgmt{
+  right:14%;
+  border-color:rgba(58,110,165,0.88);
+  background:rgba(58,110,165,0.05);
+}
+.stamp-mgmt .stamp-text{color:rgba(58,110,165,0.88);}
+.stamp-mgmt .stamp-date{color:rgba(58,110,165,0.65);}
 .stamp-text{
   font-family:'Playfair Display',serif;
-  font-size:36px;font-weight:700;
-  color:rgba(192,57,43,0.82);
-  letter-spacing:6px;line-height:1;
-  display:block;
+  font-size:26px;font-weight:700;
+  letter-spacing:3px;line-height:1.1;
+  display:block;white-space:nowrap;
+}
+.stamp-label{
+  font-size:11px;font-weight:700;
+  letter-spacing:2px;line-height:1;
+  display:block;margin-bottom:3px;opacity:.85;
 }
 .stamp-date{
   font-family:'DM Mono',monospace;
-  font-size:11px;color:rgba(192,57,43,0.65);
-  letter-spacing:2px;margin-top:4px;
+  font-size:10px;
+  letter-spacing:1px;margin-top:3px;
   display:block;
 }
 </style>
@@ -1150,15 +1169,24 @@ function renderHome(){
     const sum=calcSaved(t,b);total+=sum;
     const has=Object.keys(b).length>0;
     const paid=b.paid||{};
-    const allOk=b.stamped || PAY_ITEMS.every(item=>paid[item.key]?.date||paid[item.key]?.na);
+    const bothStamped=b.stampedRent&&b.stampedMgmt;
+    const someStamped=b.stampedRent||b.stampedMgmt;
+    const allOk=bothStamped || PAY_ITEMS.every(item=>paid[item.key]?.date||paid[item.key]?.na);
     const floor=getFloor(t.unit);
     const floorLabel=floor>0?`${floor}F`:'?F';
+    let stampTag='';
+    if(has){
+      if(b.stampedRent&&b.stampedMgmt)stampTag='<span class="tag tag-ok">✓ 완납</span>';
+      else if(b.stampedRent)stampTag='<span class="tag tag-ok" style="color:var(--red);border-color:rgba(192,57,43,.4);">🔴 월세</span>';
+      else if(b.stampedMgmt)stampTag='<span class="tag tag-ok" style="color:#5a9bd8;border-color:rgba(58,110,165,.4);">🔵 관리비</span>';
+      else if(allOk)stampTag='<span class="tag tag-ok">✓ 완납</span>';
+    }
     html+=`<div class="t-item" onclick="goToHistory('${t.id}')">
       <div class="t-avatar" style="font-size:12px;letter-spacing:-.5px;">${floorLabel}</div>
       <div class="t-info">
         <div class="t-name">${t.biz||t.name}
           ${!has?'<span class="tag tag-new">미입력</span>':''}
-          ${has&&b.stamped?'<span class="tag tag-ok">🔴 완납</span>':has&&allOk?'<span class="tag tag-ok">✓ 완납</span>':''}
+          ${stampTag}
         </div>
         <div class="t-unit">${t.name} · ${t.unit}</div>
       </div>
@@ -1333,7 +1361,8 @@ function confirmSettlement(){
     b.waste=r.waste;b.wasteNA=r.wasteNA;
     // 기존 납부확인·완납도장 보존
     if(prev.paid)b.paid=prev.paid;
-    if(prev.stamped){b.stamped=prev.stamped;b.stampedDate=prev.stampedDate;}
+    if(prev.stampedRent){b.stampedRent=prev.stampedRent;b.stampedRentDate=prev.stampedRentDate;}
+    if(prev.stampedMgmt){b.stampedMgmt=prev.stampedMgmt;b.stampedMgmtDate=prev.stampedMgmtDate;}
   });
   if(settInputs[key])settInputs[key].confirmed=true;
   save();goSettStep(3);showToast('정산 완료! ✅');
@@ -1625,12 +1654,11 @@ function renderHistContent(){
     water?`<div class="ov-row"><span class="ov-label">수도요금</span><span class="ov-value">${fmt(water)}</span></div>`:'',
     waste?`<div class="ov-row"><span class="ov-label">오물처리비</span><span class="ov-value">${fmt(waste)}</span></div>`:'',
   ].join('');
-  const isStamped = b.stamped;
-  const stampHtml = isStamped ? `
-    <div class="stamp-overlay">
-      <span class="stamp-text">완납</span>
-      <span class="stamp-date">${b.stampedDate||''}</span>
-    </div>` : '';
+  const rentStamped = b.stampedRent;
+  const mgmtStamped = b.stampedMgmt;
+  const stampHtml = `
+    ${rentStamped?`<div class="stamp-overlay stamp-rent"><span class="stamp-label">월세</span><span class="stamp-text">완납</span><span class="stamp-date">${b.stampedRentDate||''}</span></div>`:''}
+    ${mgmtStamped?`<div class="stamp-overlay stamp-mgmt"><span class="stamp-label">관리비</span><span class="stamp-text">완납</span><span class="stamp-date">${b.stampedMgmtDate||''}</span></div>`:''}`;
 
   con.innerHTML=`<div class="card stamp-wrap">
     ${stampHtml}
@@ -1639,32 +1667,40 @@ function renderHistContent(){
     <div>${rows}</div>
     ${pCnt>0?`<div style="margin-top:8px;font-size:11px;color:var(--green);line-height:1.8;">${PAY_ITEMS.filter(item=>paid[item.key]?.date&&!paid[item.key]?.na).map(item=>`✅ ${item.label} ${paid[item.key].date}`).join('<br>')}</div>`:''}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
-      <button onclick="stampBill()" style="background:${isStamped?'var(--redbg)':'var(--surface2)'};border:2px solid ${isStamped?'rgba(192,57,43,.5)':'var(--border2)'};color:${isStamped?'var(--red)':'var(--text2)'};padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">
-        ${isStamped?'🔴 완납 취소':'🔴 완납 도장'}
+      <button onclick="stampBill('rent')" style="background:${rentStamped?'var(--redbg)':'var(--surface2)'};border:2px solid ${rentStamped?'rgba(192,57,43,.5)':'var(--border2)'};color:${rentStamped?'var(--red)':'var(--text2)'};padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">
+        ${rentStamped?'🔴 월세 취소':'🔴 월세 완납'}
       </button>
-      <button onclick="editThisMonth()" style="background:var(--goldbg2);border:1px solid var(--gold);color:var(--gold);padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">✏️ 수정</button>
+      <button onclick="stampBill('mgmt')" style="background:${mgmtStamped?'rgba(58,110,165,0.12)':'var(--surface2)'};border:2px solid ${mgmtStamped?'rgba(58,110,165,.5)':'var(--border2)'};color:${mgmtStamped?'#5a9bd8':'var(--text2)'};padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">
+        ${mgmtStamped?'🔵 관리비 취소':'🔵 관리비 완납'}
+      </button>
     </div>
-    <button onclick="previewKakao()" style="margin-top:8px;background:linear-gradient(135deg,#2d6a4f,#1b4332);border:none;color:var(--gold3);padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;width:100%;font-family:'Noto Sans KR',sans-serif;">💬 카카오 메시지</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+      <button onclick="editThisMonth()" style="background:var(--goldbg2);border:1px solid var(--gold);color:var(--gold);padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">✏️ 수정</button>
+      <button onclick="previewKakao()" style="background:linear-gradient(135deg,#2d6a4f,#1b4332);border:none;color:var(--gold3);padding:10px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">💬 카카오</button>
+    </div>
   </div>`;
 }
 function editThisMonth(){const t=tenants.find(x=>x.id===selTenantId);if(!t)return;document.getElementById('hist-content').innerHTML=buildBillFormHtml(t,histY,histM);}
 
-/* 완납 도장 */
-function stampBill(){
+/* 완납 도장 (rent=월세, mgmt=관리비) */
+function stampBill(type){
   const key=`${histY}-${String(histM).padStart(2,'0')}`;
   if(!bills[key])bills[key]={};
   if(!bills[key][selTenantId])bills[key][selTenantId]={};
   const b=bills[key][selTenantId];
-  b.stamped=!b.stamped;
-  if(b.stamped){
-    const now=new Date();
-    b.stampedDate=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
-  } else {
-    delete b.stampedDate;
+  const now=new Date();
+  const today=`${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+  if(type==='rent'){
+    b.stampedRent=!b.stampedRent;
+    if(b.stampedRent)b.stampedRentDate=today;else delete b.stampedRentDate;
+    save();renderHistContent();
+    if(b.stampedRent)showToast('월세 완납 도장 🔴');
+  }else if(type==='mgmt'){
+    b.stampedMgmt=!b.stampedMgmt;
+    if(b.stampedMgmt)b.stampedMgmtDate=today;else delete b.stampedMgmtDate;
+    save();renderHistContent();
+    if(b.stampedMgmt)showToast('관리비 완납 도장 🔵');
   }
-  save();
-  renderHistContent();
-  if(b.stamped) showToast('완납 도장이 찍혔어요 🔴');
 }
 
 function buildBillFormHtml(t,year,month){
@@ -1764,7 +1800,8 @@ function saveBill(){
     waterMeter:     document.getElementById('bill-water-meter')?.value||0,
     ...(prev.waterMeterDate ? {waterMeterDate:prev.waterMeterDate} : {}),
     ...(prev.paid      ? {paid:prev.paid}           : {}),
-    ...(prev.stamped   ? {stamped:prev.stamped,stampedDate:prev.stampedDate} : {}),
+    ...(prev.stampedRent ? {stampedRent:prev.stampedRent,stampedRentDate:prev.stampedRentDate} : {}),
+    ...(prev.stampedMgmt ? {stampedMgmt:prev.stampedMgmt,stampedMgmtDate:prev.stampedMgmtDate} : {}),
   };
   save();renderHome();if(selTenantId)renderHistContent();showToast('저장됐어요 ✓');
 }
