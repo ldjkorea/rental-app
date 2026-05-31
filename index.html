@@ -863,12 +863,12 @@ function renderMgmtItemsModal(items){
       html+=`<div id="mi-row-${d.key}" style="padding:6px 0;border-bottom:1px solid var(--border);opacity:${isNa?'0.5':'1'};">
         <div style="display:flex;align-items:flex-start;gap:8px;">
           <div style="flex:1;min-width:0;">
-            <div style="font-size:12px;color:var(--text);font-weight:500;display:flex;align-items:center;gap:5px;">
+            <div style="display:flex;align-items:center;gap:5px;">
               <span style="font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;flex-shrink:0;">${d.no}</span>
-              <span>${d.name}</span>
+              <input type="text" id="mi-name-${d.key}" value="${item.name!==undefined?item.name:''}" placeholder="${d.name}"
+                style="flex:1;min-width:0;padding:4px 7px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-size:12px;font-weight:500;font-family:'Noto Sans KR',sans-serif;">
               ${isActual?`<span style="font-size:10px;color:var(--gold2);background:var(--goldbg2);padding:2px 6px;border-radius:8px;flex-shrink:0;">실비</span>`:''}
             </div>
-            ${d.desc?`<div style="font-size:10px;color:var(--text2);margin-top:1px;padding-left:18px;">${d.desc}</div>`:''}
           </div>
           <select id="mi-sel-${d.key}" onchange="onMgmtStatusChange('${d.key}',this.value)"
             style="padding:5px 7px;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;
@@ -912,12 +912,21 @@ function updateMgmtTotal(){
   if(el)el.textContent=fmt(total);
 }
 
+function mgmtItemName(t,def){
+  const it=getMgmtItems(t).find(x=>x.key===def.key);
+  return (it&&it.name)?it.name:def.name;
+}
 function readMgmtItemsFromModal(){
-  return ALL_MGMT_ITEMS.map(d=>({
-    key:d.key,
-    status:document.getElementById(`mi-sel-${d.key}`)?.value||d.defaultStatus,
-    amount:Number(document.getElementById(`mi-amt-${d.key}`)?.value)||0,
-  }));
+  return ALL_MGMT_ITEMS.map(d=>{
+    const customName=document.getElementById(`mi-name-${d.key}`)?.value?.trim();
+    return{
+      key:d.key,
+      status:document.getElementById(`mi-sel-${d.key}`)?.value||d.defaultStatus,
+      amount:Number(document.getElementById(`mi-amt-${d.key}`)?.value)||0,
+      // 기본 이름과 다를 때만 저장 (빈칸이면 기본 이름 사용)
+      ...(customName&&customName!==d.name?{name:customName}:{}),
+    };
+  });
 }
 
 function calcMgmtTotal(mgmtItems){
@@ -948,7 +957,7 @@ function buildMgmtBreakdownHtml(t){
       <div style="display:flex;align-items:center;gap:5px;min-width:0;flex:1;">
         <span style="font-size:10px;color:var(--text2);font-family:'DM Mono',monospace;flex-shrink:0;">${d.no}</span>
         ${badge}
-        <span style="color:${isActive||isActual?'var(--text2)':'var(--text3)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name}</span>
+        <span style="color:${isActive||isActual?'var(--text2)':'var(--text3)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(it&&it.name)||d.name}</span>
       </div>
       <span style="font-family:'DM Mono',monospace;color:${isActive&&it.amount>0?'var(--text)':isActual?'var(--gold2)':'var(--text3)'};flex-shrink:0;margin-left:6px;">${amt}</span>
     </div>`;
@@ -1978,7 +1987,7 @@ function previewKakao(){
       if(x.status==='active') amtStr=x.amount>0?fmtN(x.amount)+'원':'0원';
       else if(x.status==='actual') amtStr='실비정산';
       else amtStr='미운영';
-      bLines+=`\n   ${def.no}. ${def.name} : ${amtStr}`;
+      bLines+=`\n   ${def.no}. ${x.name||def.name} : ${amtStr}`;
     });
   }
   if(elec)bLines+=`\n${um}월 공용전기세 : ${fmtN(withVat(elec))}원`;
